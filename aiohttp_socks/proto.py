@@ -114,12 +114,18 @@ class BaseSocketWrapper(object):
                 address=(self._socks_host, self._socks_port)
             )
         except OSError as e:
+            self.close()
             raise SocksConnectionError(
+                e.errno,
                 '[Errno %s] Can not connect to proxy %s:%d [%s]' %
                 (e.errno, self._socks_host, self._socks_port,
                  e.strerror)) from e
 
         await self.negotiate()
+
+    def close(self):
+        # self._socket.shutdown(socket.SHUT_RDWR)
+        self._socket.close()
 
     async def sendall(self, data):
         await self._loop.sock_sendall(self._socket, data)
