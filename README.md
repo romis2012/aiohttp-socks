@@ -1,6 +1,7 @@
 ## aiohttp-socks
 
-SOCKS proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). 
+SOCKS proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp).  
+SOCKS4(a) and SOCKS5 are supported.
 
 ## Requirements
 - Python >= 3.5.3

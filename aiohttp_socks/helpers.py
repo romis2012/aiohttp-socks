@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import socket
 from urllib.parse import urlparse, unquote
 
@@ -48,3 +49,62 @@ def parse_socks_url(url):
         username, password = '', ''
 
     return socks_ver, host, port, username, password
+
+
+async def open_connection(socks_url=None, host=None, port=None, *,
+                          socks_ver=SocksVer.SOCKS5,
+                          socks_host='127.0.0.1', socks_port=1080,
+                          username=None, password=None, rdns=True,
+                          family=socket.AF_INET,
+                          loop=None, **kwargs):
+    if host is None or port is None:
+        raise ValueError('host and port must be specified')
+
+    if loop is None:
+        loop = asyncio.get_event_loop()
+
+    if socks_url is not None:
+        socks_ver, socks_host, socks_port, username, password \
+            = parse_socks_url(socks_url)
+
+    sock = create_socket_wrapper(
+        loop=loop,
+        socks_ver=socks_ver, host=socks_host, port=socks_port,
+        username=username, password=password, rdns=rdns, family=family)
+
+    await sock.connect((host, port))
+
+    return await asyncio.open_connection(
+        loop=loop, host=None, port=None, sock=sock.socket, **kwargs)
+
+
+async def create_connection(socks_url=None, protocol_factory=None,
+                            host=None, port=None, *,
+                            socks_ver=SocksVer.SOCKS5,
+                            socks_host='127.0.0.1', socks_port=1080,
+                            username=None, password=None, rdns=True,
+                            family=socket.AF_INET,
+                            loop=None, **kwargs):
+    if protocol_factory is None:
+        raise ValueError('protocol_factory must be specified')
+
+    if host is None or port is None:
+        raise ValueError('host and port must be specified')
+
+    if loop is None:
+        loop = asyncio.get_event_loop()
+
+    if socks_url is not None:
+        socks_ver, socks_host, socks_port, username, password \
+            = parse_socks_url(socks_url)
+
+    sock = create_socket_wrapper(
+        loop=loop,
+        socks_ver=socks_ver, host=socks_host, port=socks_port,
+        username=username, password=password, rdns=rdns, family=family)
+
+    await sock.connect((host, port))
+
+    return await loop.create_connection(
+        protocol_factory=protocol_factory,
+        host=None, port=None, sock=sock.socket, **kwargs)

@@ -117,11 +117,14 @@ class BaseSocketWrapper(object):
             self.close()
             raise SocksConnectionError(
                 e.errno,
-                '[Errno %s] Can not connect to proxy %s:%d [%s]' %
-                (e.errno, self._socks_host, self._socks_port,
-                 e.strerror)) from e
+                'Can not connect to proxy %s:%d [%s]' %
+                (self._socks_host, self._socks_port, e.strerror)) from e
 
-        await self.negotiate()
+        try:
+            await self.negotiate()
+        except SocksError:
+            self.close()
+            raise
 
     def close(self):
         # self._socket.shutdown(socket.SHUT_RDWR)
