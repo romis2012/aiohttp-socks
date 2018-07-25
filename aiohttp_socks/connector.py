@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
 import socket
 from aiohttp import TCPConnector
+from aiohttp.abc import AbstractResolver
 
 from .proto import SocksVer
 from .helpers import create_socket_wrapper, parse_socks_url
+
+
+class NoResolver(AbstractResolver):
+    async def resolve(self, host, port=0, family=socket.AF_INET):
+        return [{'hostname': host,
+                 'host': host, 'port': port,
+                 'family': family, 'proto': 0,
+                 'flags': 0}]
+
+    async def close(self):
+        pass
 
 
 class SocksConnector(TCPConnector):
@@ -11,10 +23,11 @@ class SocksConnector(TCPConnector):
                  host=None, port=None,
                  username=None, password=None,
                  rdns=False, family=socket.AF_INET, **kwargs):
-        super().__init__(**kwargs)
 
-        self._rdns = rdns
-        self._req = None
+        if rdns:
+            kwargs['resolver'] = NoResolver()
+
+        super().__init__(**kwargs)
 
         self._sock = create_socket_wrapper(
             loop=self._loop,
@@ -24,19 +37,11 @@ class SocksConnector(TCPConnector):
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory,
                                       host, port, **kwargs):
-        if self._rdns:
-            orig_host = self._req.url.host
-        else:
-            orig_host = host
 
-        await self._sock.connect((orig_host, port))
+        await self._sock.connect((host, port))
 
         return await super()._wrap_create_connection(
             protocol_factory, None, None, sock=self._sock.socket, **kwargs)
-
-    async def connect(self, req, *args, **kwargs):
-        self._req = req
-        return await super().connect(req, *args, **kwargs)
 
     @classmethod
     def from_url(cls, url):
