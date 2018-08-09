@@ -67,8 +67,7 @@ class BaseSocketWrapper(object):
         self._dest_host = None
         self._dest_port = None
         self._family = family
-        self._socket = socket.socket(family=family, type=socket.SOCK_STREAM)
-        self._socket.setblocking(False)
+        self._socket = None
 
     async def _send(self, request):
         data = bytearray()
@@ -107,6 +106,12 @@ class BaseSocketWrapper(object):
     async def connect(self, address):
         self._dest_host = address[0]
         self._dest_port = address[1]
+
+        self._socket = socket.socket(
+            family=self._family,
+            type=socket.SOCK_STREAM
+        )
+        self._socket.setblocking(False)
 
         try:
             await self._loop.sock_connect(
