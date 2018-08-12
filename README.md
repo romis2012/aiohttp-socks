@@ -13,6 +13,7 @@ pip install aiohttp_socks
 
 ## Usage
 
+#### aiohttp usage:
 ```python
 import aiohttp
 from aiohttp_socks import SocksConnector, SocksVer
@@ -27,10 +28,30 @@ async def fetch(url):
     #     port=1080,
     #     username='user',
     #     password='password'
+    #     rdns=True
     # )
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as response:
             return await response.text()
+```
+
+#### aiohttp-socks also provided `open_connection` and `create_connection` functions:
+
+```python
+from aiohttp_socks import open_connection
+
+async def fetch():
+    reader, writer = await open_connection(
+        socks_url='socks5://user:password@127.0.0.1:1080',
+        host='check-host.net',
+        port=80
+    )
+    request = (b"GET /ip HTTP/1.1\r\n"
+               b"Host: check-host.net\r\n"
+               b"Connection: close\r\n\r\n")
+
+    writer.write(request)
+    return await reader.read(-1)
 ```
 
 ## Why yet another SOCKS connector for aiohttp
