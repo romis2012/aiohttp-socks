@@ -29,19 +29,28 @@ class SocksConnector(TCPConnector):
 
         super().__init__(**kwargs)
 
-        self._sock = create_socket_wrapper(
-            loop=self._loop,
-            socks_ver=socks_ver, host=host, port=port,
-            username=username, password=password, rdns=rdns, family=family)
+        self._socks_ver = socks_ver
+        self._socks_host = host
+        self._socks_port = port
+        self._socks_username = username
+        self._socks_password = password
+        self._rdns = rdns
+        self._socks_family = family
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory,
                                       host, port, **kwargs):
+        sock = create_socket_wrapper(
+            loop=self._loop,
+            socks_ver=self._socks_ver,
+            host=self._socks_host, port=self._socks_port,
+            username=self._socks_username, password=self._socks_password,
+            rdns=self._rdns, family=self._socks_family)
 
-        await self._sock.connect((host, port))
+        await sock.connect((host, port))
 
         return await super()._wrap_create_connection(
-            protocol_factory, None, None, sock=self._sock.socket, **kwargs)
+            protocol_factory, None, None, sock=sock.socket, **kwargs)
 
     @classmethod
     def from_url(cls, url):
