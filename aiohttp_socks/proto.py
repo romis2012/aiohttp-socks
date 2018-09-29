@@ -2,6 +2,8 @@
 import asyncio
 import socket
 import struct
+import sys
+
 from .errors import (
     SocksConnectionError, InvalidServerReply, SocksError,
     InvalidServerVersion, NoAcceptableAuthMethods,
@@ -124,14 +126,19 @@ class BaseSocketWrapper(object):
                 e.errno,
                 'Can not connect to proxy %s:%d [%s]' %
                 (self._socks_host, self._socks_port, e.strerror)) from e
-        except (asyncio.TimeoutError, asyncio.CancelledError):
+        except asyncio.CancelledError:
             self.close()
             raise
 
         try:
             await self.negotiate()
-        except (SocksError, asyncio.TimeoutError, asyncio.CancelledError):
+        except SocksError:
             self.close()
+            raise
+        except asyncio.CancelledError:
+            # workaround for [WinError 10038] on Windows SelectorEventLoop
+            if sys.platform != 'win32':
+                self.close()
             raise
 
     def close(self):
