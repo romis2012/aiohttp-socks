@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import socket
 import struct
 from .errors import (
@@ -123,10 +124,13 @@ class BaseSocketWrapper(object):
                 e.errno,
                 'Can not connect to proxy %s:%d [%s]' %
                 (self._socks_host, self._socks_port, e.strerror)) from e
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            self.close()
+            raise
 
         try:
             await self.negotiate()
-        except SocksError:
+        except (SocksError, asyncio.TimeoutError, asyncio.CancelledError):
             self.close()
             raise
 

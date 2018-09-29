@@ -35,7 +35,7 @@ async def fetch(url):
             return await response.text()
 ```
 
-#### aiohttp-socks also provided `open_connection` and `create_connection` functions:
+#### aiohttp-socks also provides `open_connection` and `create_connection` functions:
 
 ```python
 from aiohttp_socks import open_connection
