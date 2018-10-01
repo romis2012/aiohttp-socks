@@ -2,7 +2,6 @@
 import asyncio
 import socket
 import struct
-import sys
 
 from .errors import (
     SocksConnectionError, InvalidServerReply, SocksError,
@@ -47,6 +46,23 @@ SOCKS5_ERRORS = {
     0x07: 'Command not supported, or protocol error',
     0x08: 'Address type not supported'
 }
+
+
+def _is_proactor(loop):
+    try:
+        from asyncio import ProactorEventLoop
+    except ImportError:
+        return False
+    return isinstance(loop, ProactorEventLoop)
+
+
+def _is_uvloop(loop):
+    try:
+        # noinspection PyPackageRequirements
+        from uvloop import Loop
+    except ImportError:
+        return False
+    return isinstance(loop, Loop)
 
 
 class SocksVer(object):
@@ -136,13 +152,11 @@ class BaseSocketWrapper(object):
             self.close()
             raise
         except asyncio.CancelledError:
-            # workaround for [WinError 10038] on Windows SelectorEventLoop
-            if sys.platform != 'win32':
+            if _is_proactor(self._loop) or _is_uvloop(self._loop):
                 self.close()
             raise
 
     def close(self):
-        # self._socket.shutdown(socket.SHUT_RDWR)
         self._socket.close()
 
     async def sendall(self, data):
