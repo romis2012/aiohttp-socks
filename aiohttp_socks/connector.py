@@ -53,7 +53,7 @@ class SocksConnector(TCPConnector):
             protocol_factory, None, None, sock=sock.socket, **kwargs)
 
     @classmethod
-    def from_url(cls, url):
+    def from_url(cls, url, **kwargs):
         socks_ver, host, port, username, password = parse_socks_url(url)
         return cls(socks_ver=socks_ver, host=host, port=port,
-                   username=username, password=password)
+                   username=username, password=password, **kwargs)
