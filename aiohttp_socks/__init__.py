@@ -8,7 +8,7 @@ from .errors import (
     SocksConnectionError
 )
 
-__version__ = '0.1.9'
+__version__ = '0.2'
 
 __all__ = ('SocksConnector', 'SocksVer',
            'SocksError', 'NoAcceptableAuthMethods', 'UnknownAuthMethod',
