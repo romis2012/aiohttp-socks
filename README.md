@@ -27,7 +27,7 @@ async def fetch(url):
     #     host='127.0.0.1',
     #     port=1080,
     #     username='user',
-    #     password='password'
+    #     password='password',
     #     rdns=True
     # )
     async with aiohttp.ClientSession(connector=connector) as session:
