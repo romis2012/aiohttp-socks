@@ -6,6 +6,9 @@ python:
   - "3.5"
   - "3.6"
 
+before_install:
+  - pkill -f "3proxy"
+
 install:
   - pip install -r requirements-dev.txt
   - pip install -e .
