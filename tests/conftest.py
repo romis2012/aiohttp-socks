@@ -24,7 +24,15 @@ SOCKS4_HOST = '127.0.0.1'
 SOCKS4_PORT = 7781
 
 
-def wait_for_socket(server_name, host, port, family=socket.AF_INET, timeout=2):
+def _kill_3proxy():
+    system = platform.system()
+    if system == 'Windows':
+        os.system('taskkill /f /im 3proxy.exe')
+    elif system == 'Linux':
+        os.system('killall -9 3proxy')
+
+
+def wait_for_socket(server_name, host, port, family=socket.AF_INET, timeout=8):
     ok = False
     for x in range(10):
         try:
@@ -81,6 +89,8 @@ def start_proxy_server():
 
 @pytest.fixture(scope='session', autouse=True)
 def proxy_server():
+    _kill_3proxy()
+
     th = threading.Thread(target=start_proxy_server)
     th.daemon = True
     th.start()
