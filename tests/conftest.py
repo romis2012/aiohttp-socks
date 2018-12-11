@@ -102,4 +102,3 @@ def proxy_server():
         print(' * %s' % child)
         # child.send_signal(signal.SIGINT)
         child.send_signal(signal.SIGTERM)
-
