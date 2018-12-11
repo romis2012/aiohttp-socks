@@ -99,8 +99,8 @@ def proxy_server():
 
     wait_for_socket('3proxy:socks4', SOCKS4_HOST, SOCKS4_PORT)
     wait_for_socket('3proxy:socks5:ipv4', SOCKS5_IPV4_HOST, SOCKS5_IPV4_PORT)
-    # wait_for_socket('3proxy:socks5:ipv6', SOCKS5_IPV6_HOST, SOCKS5_IPV6_PORT,
-    #                 socket.AF_INET6)
+    wait_for_socket('3proxy:socks5:ipv6', SOCKS5_IPV6_HOST, SOCKS5_IPV6_PORT,
+                    socket.AF_INET6)
 
     yield None
 

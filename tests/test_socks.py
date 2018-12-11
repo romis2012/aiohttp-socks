@@ -100,7 +100,7 @@ async def test_socks5_connector_with_invalid_proxy_port(unused_tcp_port):
                 await resp.text()
 
 
-@pytest.mark.skip(reason='TravisCI doesn`t support ipv6')
+# @pytest.mark.skip(reason='TravisCI doesn`t support ipv6')
 @pytest.mark.asyncio
 async def test_socks5_connector_ipv6():
     connector = SocksConnector.from_url(SOCKS5_IPV6_URL,
