@@ -48,7 +48,7 @@ SOCKS5_ERRORS = {
 }
 
 
-def _is_proactor(loop):
+def _is_proactor(loop):  # pragma: no cover
     try:
         from asyncio import ProactorEventLoop
     except ImportError:
@@ -56,7 +56,7 @@ def _is_proactor(loop):
     return isinstance(loop, ProactorEventLoop)
 
 
-def _is_uvloop(loop):
+def _is_uvloop(loop):  # pragma: no cover
     try:
         # noinspection PyPackageRequirements
         from uvloop import Loop
@@ -71,14 +71,8 @@ class SocksVer(object):
 
 
 class BaseSocketWrapper(object):
-    def __init__(self, loop, host=None, port=None,
+    def __init__(self, loop, host, port,
                  family=socket.AF_INET):
-
-        if host is None:
-            host = '127.0.0.1'
-        if port is None:
-            port = 1080
-
         self._loop = loop
         self._socks_host = host
         self._socks_port = port
@@ -142,7 +136,7 @@ class BaseSocketWrapper(object):
                 e.errno,
                 'Can not connect to proxy %s:%d [%s]' %
                 (self._socks_host, self._socks_port, e.strerror)) from e
-        except asyncio.CancelledError:
+        except asyncio.CancelledError:  # pragma: no cover
             self.close()
             raise
 
@@ -151,7 +145,7 @@ class BaseSocketWrapper(object):
         except SocksError:
             self.close()
             raise
-        except asyncio.CancelledError:
+        except asyncio.CancelledError:  # pragma: no cover
             if _is_proactor(self._loop) or _is_uvloop(self._loop):
                 self.close()
             raise
@@ -171,7 +165,7 @@ class BaseSocketWrapper(object):
 
 
 class Socks4SocketWrapper(BaseSocketWrapper):
-    def __init__(self, loop, host=None, port=None,
+    def __init__(self, loop, host, port,
                  user_id=None, rdns=False):
         super().__init__(
             loop=loop,
@@ -233,7 +227,7 @@ class Socks4SocketWrapper(BaseSocketWrapper):
 
 
 class Socks5SocketWrapper(BaseSocketWrapper):
-    def __init__(self, loop, host=None, port=None, username=None,
+    def __init__(self, loop, host, port, username=None,
                  password=None, rdns=True, family=socket.AF_INET):
         super().__init__(
             loop=loop,

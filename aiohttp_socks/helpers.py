@@ -19,7 +19,7 @@ def create_socket_wrapper(loop, socks_ver, host=None, port=None,
             loop=loop, host=host, port=port,
             username=username, password=password, rdns=rdns, family=family)
 
-    raise ValueError('Invalid socks ver: %s' % socks_ver)
+    raise ValueError('Invalid socks ver: %s' % socks_ver)  # pragma: no cover
 
 
 def parse_socks_url(url):
@@ -31,15 +31,16 @@ def parse_socks_url(url):
     elif scheme == 'socks4':
         socks_ver = SocksVer.SOCKS4
     else:
-        raise ValueError('Invalid scheme component: %s' % scheme)
+        raise ValueError('Invalid scheme component: %s'
+                         % scheme)  # pragma: no cover
 
     host = parsed.hostname
     if not host:
-        raise ValueError('Empty host component')
+        raise ValueError('Empty host component')  # pragma: no cover
 
     try:
         port = parsed.port
-    except (ValueError, TypeError):
+    except (ValueError, TypeError):  # pragma: no cover
         raise ValueError('Invalid port component')
 
     try:
@@ -58,7 +59,7 @@ async def open_connection(socks_url=None, host=None, port=None, *,
                           family=socket.AF_INET,
                           loop=None, **kwargs):
     if host is None or port is None:
-        raise ValueError('host and port must be specified')
+        raise ValueError('host and port must be specified')  # pragma: no cover
 
     if loop is None:
         loop = asyncio.get_event_loop()
@@ -86,10 +87,12 @@ async def create_connection(socks_url=None, protocol_factory=None,
                             family=socket.AF_INET,
                             loop=None, **kwargs):
     if protocol_factory is None:
-        raise ValueError('protocol_factory must be specified')
+        raise ValueError('protocol_factory '
+                         'must be specified')  # pragma: no cover
 
     if host is None or port is None:
-        raise ValueError('host and port must be specified')
+        raise ValueError('host and port '
+                         'must be specified')  # pragma: no cover
 
     if loop is None:
         loop = asyncio.get_event_loop()

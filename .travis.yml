@@ -1,0 +1,24 @@
+sudo: false
+language: python
+
+python:
+  - "3.5"
+  - "3.6"
+
+install:
+  - pip install -r requirements-dev.txt
+  - pip install -e .
+
+script:
+  - flake8 aiohttp_socks tests
+  - pytest --cov=./aiohttp_socks tests/
+
+after_success:
+  - coveralls
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+notifications:
+  email: false

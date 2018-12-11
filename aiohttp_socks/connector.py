@@ -15,7 +15,7 @@ class NoResolver(AbstractResolver):
                  'flags': 0}]
 
     async def close(self):
-        pass
+        pass  # pragma: no cover
 
 
 class SocksConnector(TCPConnector):
