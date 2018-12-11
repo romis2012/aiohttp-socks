@@ -18,7 +18,7 @@
 .noseids
 .tox
 .vimrc
-bin
+# bin
 build
 cover
 coverage
