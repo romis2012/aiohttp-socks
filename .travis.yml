@@ -12,7 +12,7 @@ install:
 
 script:
   - flake8 aiohttp_socks tests
-  - pytest --cov=./aiohttp_socks tests/
+  - pytest --cov=./aiohttp_socks tests/ -s
 
 after_success:
   - coveralls

@@ -83,7 +83,9 @@ def start_proxy_server():
             cfg.write(content)
 
     cmd = '%s %s' % (binary_path, config_path)
+    print('Starting 3proxy: %s' % cmd)
     server = subprocess.Popen(cmd, shell=True)
+    print('3proxy started: %s' % server.pid)
     server.wait()
 
 
