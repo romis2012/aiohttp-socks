@@ -3,6 +3,7 @@ import socket
 import ssl
 
 import aiohttp
+# noinspection PyPackageRequirements
 import pytest
 
 from aiohttp_socks import (
@@ -11,8 +12,8 @@ from aiohttp_socks import (
 from tests.conftest import (
     SOCKS5_IPV4_HOST, SOCKS5_IPV4_PORT,
     LOGIN, PASSWORD, SOCKS5_IPV6_HOST,
-    SOCKS5_IPV6_PORT, SOCKS4_HOST, SOCKS4_PORT
-)
+    SOCKS5_IPV6_PORT, SOCKS4_HOST, SOCKS4_PORT,
+    SKIP_IPV6_TESTS)
 
 HTTP_TEST_HOST = 'httpbin.org'
 HTTP_TEST_PORT = 80
@@ -24,6 +25,7 @@ HTTP_TEST_URL = 'http://%s/ip' % HTTP_TEST_HOST
 HTTPS_TEST_URL = 'https://%s/ip' % HTTP_TEST_HOST
 
 HTTP_URL_DELAY_3_SEC = 'http://httpbin.org/delay/3'
+HTTP_URL_REDIRECT = 'http://httpbin.org/redirect/1'
 
 SOCKS5_IPV4_URL = 'socks5://{LOGIN}:{PASSWORD}@{SOCKS5_IPV4_HOST}:{SOCKS5_IPV4_PORT}'.format(  # noqa
     SOCKS5_IPV4_HOST=SOCKS5_IPV4_HOST,
@@ -100,7 +102,7 @@ async def test_socks5_connector_with_invalid_proxy_port(unused_tcp_port):
                 await resp.text()
 
 
-@pytest.mark.skip(reason='TravisCI doesn`t support ipv6')
+@pytest.mark.skipif(SKIP_IPV6_TESTS, reason='TravisCI doesn`t support ipv6')
 @pytest.mark.asyncio
 async def test_socks5_connector_ipv6():
     connector = SocksConnector.from_url(SOCKS5_IPV6_URL,

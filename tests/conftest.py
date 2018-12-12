@@ -1,19 +1,14 @@
-import signal
-import subprocess
-import os
 import platform
-import time
+import os
 
-import socket
-import threading
-
-import psutil
+# noinspection PyPackageRequirements
 import pytest
+
+from tests.utils import resolve_path, ProxyServer
 
 LOGIN = 'admin'
 PASSWORD = 'admin'
 
-# SOCKS5_IPV6_HOST = '[::1]'
 SOCKS5_IPV6_HOST = '::1'
 SOCKS5_IPV6_PORT = 7780
 
@@ -23,94 +18,38 @@ SOCKS5_IPV4_PORT = 7780
 SOCKS4_HOST = '127.0.0.1'
 SOCKS4_PORT = 7781
 
-
-def _kill_3proxy():
-    system = platform.system()
-    if system == 'Windows':
-        os.system('taskkill /f /im 3proxy.exe')
-    elif system == 'Linux':
-        os.system('killall -9 3proxy')
-
-
-def wait_for_socket(server_name, host, port, family=socket.AF_INET, timeout=8):
-    ok = False
-    for x in range(10):
-        try:
-            print('Testing [%s] proxy server on %s:%d'
-                  % (server_name, host, port))
-            s = socket.socket(family, socket.SOCK_STREAM)
-            s.connect((host, port))
-            s.close()
-        except socket.error as ex:
-            print('ERROR', ex)
-            time.sleep(timeout / 10.0)
-        else:
-            print('Connection established')
-            ok = True
-            break
-    if not ok:
-        raise Exception('The %s proxy server has not started in %d seconds'
-                        % (server_name, timeout))
-
-
-def start_proxy_server():
-    this_path = os.path.dirname(os.path.realpath(__file__))
-
-    template_path = os.path.join(this_path, '3proxy/cfg/3proxy.cfg.tmpl')
-    config_path = os.path.join(this_path, '3proxy/cfg/3proxy.cfg')
-
-    system = platform.system()
-    if system == 'Windows':
-        binary_path = os.path.join(this_path, '3proxy/bin/windows/3proxy.exe')
-    elif system == 'Linux':
-        binary_path = os.path.join(this_path, '3proxy/bin/linux/3proxy')
-    else:
-        raise RuntimeError('Unsupportable system: %s' % system)
-
-    with open(template_path, mode='r') as tmpl:
-        content = tmpl.read()
-        content = content.format(
-            LOGIN=LOGIN,
-            PASSWORD=PASSWORD,
-            SOCKS5_IPV6_PORT=SOCKS5_IPV6_PORT,
-            SOCKS5_IPV6_HOST=SOCKS5_IPV6_HOST,
-            SOCKS5_IPV4_PORT=SOCKS5_IPV4_PORT,
-            SOCKS5_IPV4_HOST=SOCKS5_IPV4_HOST,
-            SOCKS4_PORT=SOCKS4_PORT,
-            SOCKS4_HOST=SOCKS4_HOST,
-        )
-        with open(config_path, mode='w') as cfg:
-            cfg.write(content)
-
-    cmd = '%s %s' % (binary_path, config_path)
-    print('Starting 3proxy: %s' % cmd)
-    server = subprocess.Popen(cmd, shell=True)
-    print('3proxy started: %s' % server.pid)
-    server.wait()
+SKIP_IPV6_TESTS = 'SKIP_IPV6_TESTS' in os.environ
 
 
 @pytest.fixture(scope='session', autouse=True)
 def proxy_server():
-    _kill_3proxy()
+    system = platform.system().lower()
+    config_path = resolve_path('./3proxy/cfg/3proxy.cfg')
+    binary_path = resolve_path('./3proxy/bin/%s/3proxy' % system)
 
-    th = threading.Thread(target=start_proxy_server)
-    th.daemon = True
-    th.start()
+    with open(config_path, mode='w') as cfg:
+        cfg.write('users %s:CL:%s\n' % (LOGIN, PASSWORD))
 
-    wait_for_socket('3proxy:socks4', SOCKS4_HOST, SOCKS4_PORT)
-    wait_for_socket('3proxy:socks5:ipv4', SOCKS5_IPV4_HOST, SOCKS5_IPV4_PORT)
-    # wait_for_socket('3proxy:socks5:ipv6', SOCKS5_IPV6_HOST, SOCKS5_IPV6_PORT,
-    #                 socket.AF_INET6)
+        if not SKIP_IPV6_TESTS:
+            cfg.write('auth strong\n')
+            cfg.write('socks -p%d -i%s\n' % (SOCKS5_IPV6_PORT,
+                                             SOCKS5_IPV6_HOST))
+
+        cfg.write('auth strong\n')
+        cfg.write('socks -p%d -i%s\n' % (SOCKS5_IPV4_PORT, SOCKS5_IPV4_HOST))
+
+        cfg.write('auth none\n')
+        cfg.write('socks -p%d -i%s\n' % (SOCKS4_PORT, SOCKS4_HOST))
+
+    server = ProxyServer(binary_path=binary_path, config_path=config_path)
+
+    if not SKIP_IPV6_TESTS:
+        server.wait_until_connectable(host=SOCKS5_IPV6_HOST,
+                                      port=SOCKS5_IPV6_PORT)
+
+    server.wait_until_connectable(host=SOCKS5_IPV4_HOST, port=SOCKS5_IPV4_PORT)
+    server.wait_until_connectable(host=SOCKS4_HOST, port=SOCKS4_PORT)
 
     yield None
 
-    print('Active threads:')
-    for th in threading.enumerate():
-        print(' * %s' % th)
-
-    parent = psutil.Process(os.getpid())
-    print('Active child processes:')
-    for child in parent.children(recursive=True):
-        print(' * %s' % child)
-        # child.send_signal(signal.SIGINT)
-        child.send_signal(signal.SIGTERM)
+    server.kill()

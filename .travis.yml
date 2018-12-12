@@ -6,6 +6,9 @@ python:
   - "3.5"
   - "3.6"
 
+env:
+  - SKIP_IPV6_TESTS=true
+
 before_install:
   - chmod +x $TRAVIS_BUILD_DIR/tests/3proxy/bin/linux/3proxy
 
