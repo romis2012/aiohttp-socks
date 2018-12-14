@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/romis2012/aiohttp-socks.svg?branch=master)](https://travis-ci.org/romis2012/aiohttp-socks)
 [![Coverage Status](https://coveralls.io/repos/github/romis2012/aiohttp-socks/badge.svg?branch=master)](https://coveralls.io/github/romis2012/aiohttp-socks?branch=master)
-[![PyPI version](https://badge.fury.io/py/aiohttp_socks.svg)](https://badge.fury.io/py/aiohttp_socks)
+[![PyPI version](https://badge.fury.io/py/aiohttp-socks.svg)](https://badge.fury.io/py/aiohttp-socks)
 
 SOCKS proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). SOCKS4(a) and SOCKS5 are supported.
 

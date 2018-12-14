@@ -22,6 +22,9 @@ with codecs.open(os.path.join(os.path.abspath(os.path.dirname(
 if sys.version_info < (3, 5, 3):
     raise RuntimeError("aiohttp_socks requires Python 3.5.3+")
 
+with open('README.md') as f:
+    long_description = f.read()
+
 setup(
     name='aiohttp_socks',
     author='Roman Snegirev',
@@ -30,9 +33,8 @@ setup(
     license='Apache 2',
     url='https://github.com/romis2012/aiohttp-socks',
     description='SOCKS proxy connector for aiohttp',
-    long_description='SOCKS proxy connector for aiohttp. '
-                     'See https://github.com/romis2012/aiohttp-socks '
-                     'for more information',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     packages=['aiohttp_socks'],
     keywords='asyncio aiohttp socks socks5 socks4 proxy',
     install_requires=[
