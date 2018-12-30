@@ -60,7 +60,7 @@ async def fetch():
 
 ## Why yet another SOCKS connector for aiohttp
 
-Unlike [aiosocksy](https://github.com/romis2012/aiosocksy)/[aiosocks](https://github.com/nibrag/aiosocks) , aiohttp_socks has only single point of integration with aiohttp. 
+Unlike [aiosocksy](https://github.com/romis2012/aiosocksy), aiohttp_socks has only single point of integration with aiohttp. 
 This makes it easier to maintain compatibility with new aiohttp versions.
 
 
