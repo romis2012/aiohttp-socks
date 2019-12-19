@@ -35,7 +35,7 @@ setup(
     description='Proxy connector for aiohttp',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    packages=['aiohttp_socks'],
+    packages=['aiohttp_socks', 'aiohttp_socks.proxy'],
     keywords='asyncio aiohttp socks socks5 socks4 http proxy',
     install_requires=[
         'aiohttp>=2.3.2',
