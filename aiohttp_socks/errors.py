@@ -1,27 +1,30 @@
-# -*- coding: utf-8 -*-
-class SocksError(Exception):
+class ProxyError(Exception):
     pass
 
 
-class NoAcceptableAuthMethods(SocksError):
+class NoAcceptableAuthMethods(ProxyError):
     pass
 
 
-class UnknownAuthMethod(SocksError):
+class UnknownAuthMethod(ProxyError):
     pass
 
 
-class LoginAuthenticationFailed(SocksError):
+class LoginAuthenticationFailed(ProxyError):
     pass
 
 
-class InvalidServerVersion(SocksError):
+class InvalidServerVersion(ProxyError):
     pass
 
 
-class InvalidServerReply(SocksError):
+class InvalidServerReply(ProxyError):
     pass
 
 
-class SocksConnectionError(OSError):
+class ProxyConnectionError(OSError):
     pass
+
+
+SocksError = ProxyError
+SocksConnectionError = ProxyConnectionError

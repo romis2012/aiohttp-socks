@@ -1,10 +1,11 @@
-import socket
 import asyncio
+import socket
 
-from ..errors import SocksConnectionError, InvalidServerReply, SocksError
+from .mixins import StreamSocketReadWriteMixin, ResolveMixin
+from ..errors import ProxyConnectionError, ProxyError
 
 
-class BaseProxy:
+class BaseProxy(StreamSocketReadWriteMixin, ResolveMixin):
     def __init__(self, loop, proxy_host, proxy_port, family=socket.AF_INET):
         self._loop = loop
         self._socks_host = proxy_host
@@ -31,7 +32,7 @@ class BaseProxy:
             )
         except OSError as e:
             self.close()
-            raise SocksConnectionError(
+            raise ProxyConnectionError(
                 e.errno,
                 'Can not connect to proxy {}:{} [{}]'.format(
                     self._socks_host, self._socks_port, e.strerror)) from e
@@ -41,7 +42,7 @@ class BaseProxy:
 
         try:
             await self._negotiate()
-        except SocksError:
+        except ProxyError:
             self.close()
             raise
         except asyncio.CancelledError:  # pragma: no cover
@@ -49,64 +50,18 @@ class BaseProxy:
                 self.close()
             raise
 
-    async def _negotiate(self):
+    async def _negotiate(self):  # pragma: no cover
         raise NotImplementedError()
 
-    async def _send(self, request):
-        data = bytearray()
-        for item in request:
-            if isinstance(item, int):
-                data.append(item)
-            elif isinstance(item, (bytearray, bytes)):
-                data += item
-            else:
-                raise ValueError('Unsupported request type')
-        await self._loop.sock_sendall(self._socket, data)
-
-    async def _send_all(self, data):
-        await self._loop.sock_sendall(self._socket, data)
-
-    async def _receive(self, n):
-        data = bytearray()
-        while len(data) < n:
-            packet = await self._loop.sock_recv(self._socket, n - len(data))
-            if not packet:
-                raise InvalidServerReply('Connection closed unexpectedly')
-            data += packet
-        return data
-
-    async def _receive_all(self, buff_size=4096):
-        data = bytearray()
-        while True:
-            packet = await self._loop.sock_recv(self._socket, buff_size)
-            if not packet:
-                break
-            data += packet
-            if len(data) < buff_size:
-                break
-        return data
-
-    async def resolve(self, host, port=0, family=socket.AF_INET):
-        infos = await self._loop.getaddrinfo(
-            host=host, port=port,
-            family=family, type=socket.SOCK_STREAM)
-
-        if not infos:
-            raise OSError('Can`t resolve address {}:{} [{}]'.format(
-                host, port, family))
-
-        family, _, _, _, address = infos[0]
-        return family, address[0]
-
-    def _can_be_closed_safely(self):
-        def is_proactor_event_loop():  # pragma: no cover
+    def _can_be_closed_safely(self):  # pragma: no cover
+        def is_proactor_event_loop():
             try:
                 from asyncio import ProactorEventLoop
             except ImportError:
                 return False
             return isinstance(self._loop, ProactorEventLoop)
 
-        def is_uvloop_event_loop():  # pragma: no cover
+        def is_uvloop_event_loop():
             try:
                 # noinspection PyPackageRequirements
                 from uvloop import Loop

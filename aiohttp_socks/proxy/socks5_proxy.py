@@ -3,7 +3,7 @@ import socket
 
 from .helpers import is_ip_address
 from .base_proxy import BaseProxy
-from ..errors import (InvalidServerReply, SocksError, InvalidServerVersion,
+from ..errors import (InvalidServerReply, ProxyError, InvalidServerVersion,
                       NoAcceptableAuthMethods, UnknownAuthMethod,
                       LoginAuthenticationFailed)
 
@@ -59,9 +59,9 @@ class Socks5Proxy(BaseProxy):
 
         req = [SOCKS_VER5, len(auth_methods)] + auth_methods
 
-        await self._send(req)
+        await self.write(req)
 
-        ver, auth_method = await self._receive(2)
+        ver, auth_method = await self.read(2)
 
         if ver != SOCKS_VER5:  # pragma: no cover
             raise InvalidServerVersion(
@@ -86,9 +86,9 @@ class Socks5Proxy(BaseProxy):
                    len(self._password),
                    self._password.encode('ascii')]
 
-            await self._send(req)
+            await self.write(req)
 
-            ver, status = await self._receive(2)
+            ver, status = await self.read(2)
 
             if ver != 0x01:
                 raise InvalidServerReply('Invalid authentication response')
@@ -101,22 +101,22 @@ class Socks5Proxy(BaseProxy):
         req_addr = await self._build_addr_request()
         req = [SOCKS_VER5, SOCKS_CMD_CONNECT, RSV] + req_addr
 
-        await self._send(req)
+        await self.write(req)
 
-        ver, err_code, reserved = await self._receive(3)
+        ver, err_code, reserved = await self.read(3)
 
         if ver != SOCKS_VER5:
             raise InvalidServerVersion(
                 'Unexpected SOCKS version number: {}'.format(ver))
 
         if err_code != NULL:
-            raise SocksError(SOCKS5_ERRORS.get(err_code, 'Unknown error'))
+            raise ProxyError(SOCKS5_ERRORS.get(err_code, 'Unknown error'))
 
         if reserved != RSV:
             raise InvalidServerReply('The reserved byte must be 0x00')
 
         # read all available data (binded address)
-        await self._receive_all()
+        await self.read_all()
 
     async def _build_addr_request(self):
         host = self._dest_host

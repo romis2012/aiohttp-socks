@@ -42,9 +42,9 @@ class HttpProxy(BaseProxy):
 
         data = CRLF.join(req).encode('ascii')
 
-        await self._send_all(data)
+        await self.write_all(data)
 
-        res = await self._receive_all()
+        res = await self.read_all()
 
         if not res:
             raise InvalidServerReply(  # pragma: no cover

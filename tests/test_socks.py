@@ -8,7 +8,7 @@ import pytest
 
 from aiohttp_socks import (
     ProxyConnector, ProxyType,
-    SocksError, SocksConnectionError,
+    ProxyError, ProxyConnectionError,
     open_connection, create_connection)
 
 from tests.conftest import (
@@ -76,7 +76,7 @@ async def test_socks5_proxy_with_invalid_credentials():
         username=LOGIN,
         password=PASSWORD + 'aaa',
     )
-    with pytest.raises(SocksError):
+    with pytest.raises(ProxyError):
         async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(HTTP_TEST_URL) as resp:
                 await resp.text()
@@ -106,7 +106,7 @@ async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port):
         username=LOGIN,
         password=PASSWORD,
     )
-    with pytest.raises(SocksConnectionError):
+    with pytest.raises(ProxyConnectionError):
         async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(HTTP_TEST_URL) as resp:
                 await resp.text()
@@ -195,6 +195,7 @@ async def test_socks4_http_open_connection(rdns):
     writer.write(request.encode())
     response = await reader.read(-1)
     assert b'200 OK' in response
+
 
 @pytest.mark.asyncio
 async def test_socks5_http_create_connection(event_loop):

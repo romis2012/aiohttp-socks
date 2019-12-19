@@ -3,7 +3,7 @@ import socket
 
 from .helpers import is_ipv4_address
 from .base_proxy import BaseProxy
-from ..errors import InvalidServerReply, SocksError
+from ..errors import InvalidServerReply, ProxyError
 
 RSV = NULL = 0x00
 SOCKS_VER4 = 0x04
@@ -64,13 +64,13 @@ class Socks4Proxy(BaseProxy):
         if include_hostname:
             req += [host.encode('idna'), NULL]
 
-        await self._send(req)
+        await self.write(req)
 
-        rsv, code, *_ = await self._receive(8)
+        rsv, code, *_ = await self.read(8)
 
         if rsv != NULL:  # pragma: no cover
             raise InvalidServerReply('SOCKS4 proxy server sent invalid data')
 
         if code != SOCKS4_GRANTED:  # pragma: no cover
             error = SOCKS4_ERRORS.get(code, 'Unknown error')
-            raise SocksError('[Errno {0:#04x}]: {1}'.format(code, error))
+            raise ProxyError('[Errno {0:#04x}]: {1}'.format(code, error))
