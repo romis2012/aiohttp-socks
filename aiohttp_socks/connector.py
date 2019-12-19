@@ -1,4 +1,5 @@
 import socket
+import warnings
 
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
@@ -18,12 +19,15 @@ class NoResolver(AbstractResolver):
         pass  # pragma: no cover
 
 
-class SocksConnector(TCPConnector):
+class SocksConnector(TCPConnector):  # pragma: no cover
     def __init__(self, socks_ver=SocksVer.SOCKS5,
                  host=None, port=None,
                  username=None, password=None,
                  rdns=False, family=socket.AF_INET, **kwargs):
 
+        warnings.warn('SocksConnector is deprecated. '
+                      'Use ProxyConnector instead.', DeprecationWarning,
+                      stacklevel=2)
         if rdns:
             kwargs['resolver'] = NoResolver()
 
