@@ -128,7 +128,7 @@ async def test_socks4_proxy(url, rdns):
 @pytest.mark.asyncio
 async def test_socks5_http_open_connection(rdns):
     reader, writer = await open_connection(
-        socks_url=SOCKS5_IPV4_URL,
+        proxy_url=SOCKS5_IPV4_URL,
         host=HTTP_TEST_HOST,
         port=HTTP_TEST_PORT,
         rdns=rdns,
@@ -146,7 +146,7 @@ async def test_socks5_http_open_connection(rdns):
 @pytest.mark.asyncio
 async def test_socks5_https_open_connection(rdns):
     reader, writer = await open_connection(
-        socks_url=SOCKS5_IPV4_URL,
+        proxy_url=SOCKS5_IPV4_URL,
         host=HTTPS_TEST_HOST,
         port=HTTPS_TEST_PORT,
         ssl=ssl.create_default_context(),
@@ -168,7 +168,7 @@ async def test_socks5_http_create_connection(event_loop):
     protocol = asyncio.StreamReaderProtocol(reader, loop=event_loop)
 
     transport, _ = await create_connection(
-        socks_url=SOCKS5_IPV4_URL,
+        proxy_url=SOCKS5_IPV4_URL,
         protocol_factory=lambda: protocol,
         host=HTTP_TEST_HOST,
         port=HTTP_TEST_PORT,

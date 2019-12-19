@@ -5,7 +5,6 @@ from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
 
 from .proxy import ProxyType, SocksVer, parse_proxy_url, create_proxy
-from .helpers import parse_socks_url
 
 
 class NoResolver(AbstractResolver):
@@ -59,8 +58,12 @@ class SocksConnector(TCPConnector):  # pragma: no cover
 
     @classmethod
     def from_url(cls, url, **kwargs):
-        socks_ver, host, port, username, password = parse_socks_url(url)
-        return cls(socks_ver=socks_ver, host=host, port=port,
+        proxy_type, host, port, username, password = parse_proxy_url(url)
+
+        if proxy_type not in (ProxyType.SOCKS4, ProxyType.SOCKS5):
+            raise ValueError('Invalid proxy_type: {}'.format(proxy_type))
+
+        return cls(socks_ver=proxy_type.value, host=host, port=port,
                    username=username, password=password, **kwargs)
 
 

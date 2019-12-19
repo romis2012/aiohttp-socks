@@ -1,6 +1,6 @@
 from .proxy import SocksVer, ProxyType
 from .connector import SocksConnector, ProxyConnector
-from .helpers import open_connection, create_connection
+from .utils import open_connection, create_connection
 from .errors import (
     SocksError, NoAcceptableAuthMethods, UnknownAuthMethod,
     LoginAuthenticationFailed, InvalidServerVersion, InvalidServerReply,
