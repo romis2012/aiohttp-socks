@@ -68,9 +68,9 @@ class Socks4Proxy(BaseProxy):
 
         rsv, code, *_ = await self._receive(8)
 
-        if rsv != NULL:
+        if rsv != NULL:  # pragma: no cover
             raise InvalidServerReply('SOCKS4 proxy server sent invalid data')
 
-        if code != SOCKS4_GRANTED:
+        if code != SOCKS4_GRANTED:  # pragma: no cover
             error = SOCKS4_ERRORS.get(code, 'Unknown error')
             raise SocksError('[Errno {0:#04x}]: {1}'.format(code, error))

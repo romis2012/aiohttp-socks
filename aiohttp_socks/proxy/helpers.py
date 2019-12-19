@@ -1,7 +1,8 @@
 import functools
 import re
 from urllib.parse import urlparse, unquote
-from .enums import ProxyType, SocksVer
+
+from .enums import ProxyType
 
 _ipv4_pattern = (r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
                  r'(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
@@ -72,33 +73,3 @@ def parse_proxy_url(url):
         username, password = '', ''
 
     return proxy_type, host, port, username, password
-
-
-def parse_socks_url(url):
-    parsed = urlparse(url)
-
-    scheme = parsed.scheme
-    if scheme == 'socks5':
-        socks_ver = SocksVer.SOCKS5
-    elif scheme == 'socks4':
-        socks_ver = SocksVer.SOCKS4
-    else:
-        raise ValueError('Invalid scheme component: %s'
-                         % scheme)  # pragma: no cover
-
-    host = parsed.hostname
-    if not host:
-        raise ValueError('Empty host component')  # pragma: no cover
-
-    try:
-        port = parsed.port
-    except (ValueError, TypeError):  # pragma: no cover
-        raise ValueError('Invalid port component')
-
-    try:
-        username, password = (unquote(parsed.username),
-                              unquote(parsed.password))
-    except (AttributeError, TypeError):
-        username, password = '', ''
-
-    return socks_ver, host, port, username, password

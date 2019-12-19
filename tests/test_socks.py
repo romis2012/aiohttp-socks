@@ -15,6 +15,7 @@ from tests.conftest import (
     SOCKS5_IPV4_HOST, SOCKS5_IPV4_PORT,
     LOGIN, PASSWORD, SOCKS5_IPV6_HOST,
     SOCKS5_IPV6_PORT, SOCKS4_HOST, SOCKS4_PORT,
+    HTTP_PROXY_HOST, HTTP_PROXY_PORT,
     SKIP_IPV6_TESTS)
 
 HTTP_TEST_HOST = 'httpbin.org'
@@ -46,6 +47,13 @@ SOCKS5_IPV6_URL = 'socks5://{LOGIN}:{PASSWORD}@{SOCKS5_IPV6_HOST}:{SOCKS5_IPV6_P
 SOCKS4_URL = 'socks4://{SOCKS4_HOST}:{SOCKS4_PORT}'.format(
     SOCKS4_HOST=SOCKS4_HOST,
     SOCKS4_PORT=SOCKS4_PORT,
+)
+
+HTTP_PROXY_URL = 'http://{LOGIN}:{PASSWORD}@{HTTP_PROXY_HOST}:{HTTP_PROXY_PORT}'.format(  # noqa
+    HTTP_PROXY_HOST=HTTP_PROXY_HOST,
+    HTTP_PROXY_PORT=HTTP_PROXY_PORT,
+    LOGIN=LOGIN,
+    PASSWORD=PASSWORD,
 )
 
 
@@ -118,7 +126,16 @@ async def test_socks5_proxy_ipv6():
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks4_proxy(url, rdns):
-    connector = ProxyConnector.from_url(SOCKS4_URL, rdns=rdns,)
+    connector = ProxyConnector.from_url(SOCKS4_URL, rdns=rdns, )
+    async with aiohttp.ClientSession(connector=connector) as session:
+        async with session.get(url) as resp:
+            assert resp.status == 200
+
+
+@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.asyncio
+async def test_http_proxy(url):
+    connector = ProxyConnector.from_url(HTTP_PROXY_URL)
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as resp:
             assert resp.status == 200
@@ -161,6 +178,23 @@ async def test_socks5_https_open_connection(rdns):
     response = await reader.read(-1)
     assert b'200 OK' in response
 
+
+@pytest.mark.parametrize('rdns', (True, False))
+@pytest.mark.asyncio
+async def test_socks4_http_open_connection(rdns):
+    reader, writer = await open_connection(
+        proxy_url=SOCKS4_URL,
+        host=HTTP_TEST_HOST,
+        port=HTTP_TEST_PORT,
+        rdns=rdns,
+    )
+    request = ("GET /ip HTTP/1.1\r\n"
+               "Host: %s\r\n"
+               "Connection: close\r\n\r\n" % HTTP_TEST_HOST)
+
+    writer.write(request.encode())
+    response = await reader.read(-1)
+    assert b'200 OK' in response
 
 @pytest.mark.asyncio
 async def test_socks5_http_create_connection(event_loop):

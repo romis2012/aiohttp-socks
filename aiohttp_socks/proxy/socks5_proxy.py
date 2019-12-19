@@ -63,7 +63,7 @@ class Socks5Proxy(BaseProxy):
 
         ver, auth_method = await self._receive(2)
 
-        if ver != SOCKS_VER5:
+        if ver != SOCKS_VER5:  # pragma: no cover
             raise InvalidServerVersion(
                 'Unexpected SOCKS version number: %s' % ver
             )

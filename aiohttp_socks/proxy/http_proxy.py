@@ -47,21 +47,22 @@ class HttpProxy(BaseProxy):
         res = await self._receive_all()
 
         if not res:
-            raise InvalidServerReply('Invalid proxy response')
+            raise InvalidServerReply(  # pragma: no cover
+                'Invalid proxy response')
 
         line = res.split(CRLF_B, 1)[0]
         line = line.decode('utf-8', 'surrogateescape')
 
         try:
             version, code, *reason = line.split()
-        except ValueError:
+        except ValueError:  # pragma: no cover
             raise InvalidServerReply('Invalid status line: {}'.format(line))
 
         try:
             status_code = int(code)
-        except ValueError:
+        except ValueError:  # pragma: no cover
             raise InvalidServerReply('Invalid status code: {}'.format(code))
 
         if status_code != 200:
-            raise InvalidServerReply(
+            raise InvalidServerReply(  # pragma: no cover
                 'Proxy error. Status: {}'.format(status_code))

@@ -18,6 +18,9 @@ SOCKS5_IPV4_PORT = 7780
 SOCKS4_HOST = '127.0.0.1'
 SOCKS4_PORT = 7781
 
+HTTP_PROXY_HOST = '127.0.0.1'
+HTTP_PROXY_PORT = 7782
+
 SKIP_IPV6_TESTS = 'SKIP_IPV6_TESTS' in os.environ
 
 
@@ -40,6 +43,9 @@ def proxy_server():
 
         cfg.write('auth none\n')
         cfg.write('socks -p%d -i%s\n' % (SOCKS4_PORT, SOCKS4_HOST))
+
+        cfg.write('auth strong\n')
+        cfg.write('proxy -p%d -i%s -n\n' % (HTTP_PROXY_PORT, HTTP_PROXY_HOST))
 
     server = ProxyServer(binary_path=binary_path, config_path=config_path)
 
