@@ -7,7 +7,7 @@ from .errors import (
     LoginAuthenticationFailed, InvalidServerVersion, InvalidServerReply
 )
 
-__version__ = '0.2.2'
+__version__ = '0.3.0'
 
 __all__ = ('SocksConnector', 'ProxyConnector', 'SocksVer', 'ProxyType',
            'ProxyError', 'ProxyConnectionError',
