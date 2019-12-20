@@ -36,7 +36,7 @@ class StreamSocketReadWriteMixin:
             if not packet:
                 break
             data += packet
-            if len(data) < buff_size:
+            if len(packet) < buff_size:
                 break
         return data
 
