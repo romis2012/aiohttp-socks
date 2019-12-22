@@ -1,10 +1,13 @@
 import socket
 import warnings
+from typing import Iterable
 
+import attr
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
 
-from .proxy import ProxyType, SocksVer, parse_proxy_url, create_proxy
+from .proxy import (ProxyType, SocksVer, ChainProxy,
+                    parse_proxy_url, create_proxy)
 
 
 class NoResolver(AbstractResolver):
@@ -71,7 +74,7 @@ class ProxyConnector(TCPConnector):
     def __init__(self, proxy_type=ProxyType.SOCKS5,
                  host=None, port=None,
                  username=None, password=None,
-                 rdns=False, family=socket.AF_INET, **kwargs):
+                 rdns=None, family=socket.AF_INET, **kwargs):
 
         if rdns or proxy_type == ProxyType.HTTP:
             kwargs['resolver'] = NoResolver()
@@ -107,3 +110,62 @@ class ProxyConnector(TCPConnector):
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls(proxy_type=proxy_type, host=host, port=port,
                    username=username, password=password, **kwargs)
+
+
+@attr.s(frozen=True, slots=True)
+class ProxyInfo:
+    proxy_type = attr.ib(type=ProxyType)
+    host = attr.ib(type=str)
+    port = attr.ib(type=int)
+    username = attr.ib(type=str, default=None)
+    password = attr.ib(type=str, default=None)
+    rdns = attr.ib(type=bool, default=None)
+    family = attr.ib(type=int, default=socket.AF_INET)
+
+
+class ChainProxyConnector(TCPConnector):
+    def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs):
+        kwargs['resolver'] = NoResolver()
+        super().__init__(**kwargs)
+
+        self._proxy_infos = proxy_infos
+
+    # noinspection PyMethodOverriding
+    async def _wrap_create_connection(self, protocol_factory,
+                                      host, port, **kwargs):
+        proxies = []
+        for info in self._proxy_infos:
+            proxy = create_proxy(
+                proxy_type=info.proxy_type,
+                host=info.host,
+                port=info.port,
+                username=info.username,
+                password=info.password,
+                rdns=info.rdns,
+                family=info.family,
+                loop=self._loop
+            )
+            proxies.append(proxy)
+
+        proxy = ChainProxy(proxies)
+
+        await proxy.connect(host, port)
+
+        return await super()._wrap_create_connection(
+            protocol_factory, None, None, sock=proxy.socket, **kwargs)
+
+    @classmethod
+    def from_urls(cls, urls: Iterable[str], **kwargs):
+        infos = []
+        for url in urls:
+            proxy_type, host, port, username, password = parse_proxy_url(url)
+            proxy_info = ProxyInfo(
+                proxy_type=proxy_type,
+                host=host,
+                port=port,
+                username=username,
+                password=password
+            )
+            infos.append(proxy_info)
+
+        return cls(infos, **kwargs)

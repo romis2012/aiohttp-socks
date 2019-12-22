@@ -35,7 +35,7 @@ class Socks4Proxy(BaseProxy):
         self._user_id = user_id
         self._rdns = rdns
 
-    async def _negotiate(self):
+    async def negotiate(self):
         await self._socks_connect()
 
     async def _socks_connect(self):

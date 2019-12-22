@@ -1,5 +1,8 @@
 from .proxy import SocksVer, ProxyType
-from .connector import SocksConnector, ProxyConnector
+from .connector import (
+    SocksConnector, ProxyConnector,
+    ChainProxyConnector, ProxyInfo
+)
 from .utils import open_connection, create_connection
 from .proxy.errors import (
     ProxyError, ProxyConnectionError,
@@ -8,7 +11,8 @@ from .proxy.errors import (
 
 __version__ = '0.3.2'
 
-__all__ = ('SocksConnector', 'ProxyConnector', 'SocksVer', 'ProxyType',
+__all__ = ('SocksConnector', 'ProxyConnector', 'ChainProxyConnector',
+           'ProxyInfo', 'SocksVer', 'ProxyType',
            'ProxyError', 'ProxyConnectionError',
            'SocksError', 'SocksConnectionError',
            'open_connection', 'create_connection')

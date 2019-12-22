@@ -22,7 +22,7 @@ class HttpProxy(BaseProxy):
         self._username = username
         self._password = password
 
-    async def _negotiate(self):
+    async def negotiate(self):
         host = self._dest_host
         port = self._dest_port
         login = self._username
@@ -64,4 +64,4 @@ class HttpProxy(BaseProxy):
 
         if status_code != 200:
             raise ProxyError(  # pragma: no cover
-                'Proxy error. Status: {}'.format(status_code))
+                'Proxy server error. Status: {}'.format(status_code))

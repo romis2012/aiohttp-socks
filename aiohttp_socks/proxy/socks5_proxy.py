@@ -48,7 +48,7 @@ class Socks5Proxy(BaseProxy):
         self._password = password
         self._rdns = rdns
 
-    async def _negotiate(self):
+    async def negotiate(self):
         await self._socks_auth()
         await self._socks_connect()
 
