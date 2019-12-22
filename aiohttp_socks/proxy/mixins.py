@@ -1,5 +1,5 @@
 import socket
-from ..errors import InvalidServerReply
+from .errors import ProxyError
 
 
 class StreamSocketReadWriteMixin:
@@ -25,7 +25,7 @@ class StreamSocketReadWriteMixin:
         while len(data) < n:
             packet = await self._loop.sock_recv(self._socket, n - len(data))
             if not packet:
-                raise InvalidServerReply('Connection closed unexpectedly')
+                raise ProxyError('Connection closed unexpectedly')
             data += packet
         return data
 

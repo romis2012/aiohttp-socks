@@ -73,10 +73,7 @@ class ProxyConnector(TCPConnector):
                  username=None, password=None,
                  rdns=False, family=socket.AF_INET, **kwargs):
 
-        if proxy_type == ProxyType.HTTP:
-            rdns = True
-
-        if rdns:
+        if rdns or proxy_type == ProxyType.HTTP:
             kwargs['resolver'] = NoResolver()
 
         super().__init__(**kwargs)

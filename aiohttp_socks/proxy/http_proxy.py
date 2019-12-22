@@ -2,7 +2,7 @@ import socket
 
 from aiohttp import BasicAuth
 from aiohttp.http import SERVER_SOFTWARE
-from ..errors import InvalidServerReply
+from .errors import ProxyError
 
 from .base_proxy import BaseProxy
 
@@ -47,8 +47,7 @@ class HttpProxy(BaseProxy):
         res = await self.read_all()
 
         if not res:
-            raise InvalidServerReply(  # pragma: no cover
-                'Invalid proxy response')
+            raise ProxyError('Invalid proxy response')  # pragma: no cover'
 
         line = res.split(CRLF_B, 1)[0]
         line = line.decode('utf-8', 'surrogateescape')
@@ -56,13 +55,13 @@ class HttpProxy(BaseProxy):
         try:
             version, code, *reason = line.split()
         except ValueError:  # pragma: no cover
-            raise InvalidServerReply('Invalid status line: {}'.format(line))
+            raise ProxyError('Invalid status line: {}'.format(line))
 
         try:
             status_code = int(code)
         except ValueError:  # pragma: no cover
-            raise InvalidServerReply('Invalid status code: {}'.format(code))
+            raise ProxyError('Invalid status code: {}'.format(code))
 
         if status_code != 200:
-            raise InvalidServerReply(  # pragma: no cover
+            raise ProxyError(  # pragma: no cover
                 'Proxy error. Status: {}'.format(status_code))

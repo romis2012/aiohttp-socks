@@ -1,10 +1,9 @@
 from .proxy import SocksVer, ProxyType
 from .connector import SocksConnector, ProxyConnector
 from .utils import open_connection, create_connection
-from .errors import (
-    ProxyError, ProxyConnectionError, SocksError, SocksConnectionError,
-    NoAcceptableAuthMethods, UnknownAuthMethod,
-    LoginAuthenticationFailed, InvalidServerVersion, InvalidServerReply
+from .proxy.errors import (
+    ProxyError, ProxyConnectionError,
+    SocksError, SocksConnectionError,
 )
 
 __version__ = '0.3.2'
@@ -12,7 +11,4 @@ __version__ = '0.3.2'
 __all__ = ('SocksConnector', 'ProxyConnector', 'SocksVer', 'ProxyType',
            'ProxyError', 'ProxyConnectionError',
            'SocksError', 'SocksConnectionError',
-           'NoAcceptableAuthMethods', 'UnknownAuthMethod',
-           'LoginAuthenticationFailed', 'InvalidServerVersion',
-           'InvalidServerReply', 'open_connection',
-           'create_connection')
+           'open_connection', 'create_connection')

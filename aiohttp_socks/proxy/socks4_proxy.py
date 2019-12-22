@@ -3,7 +3,7 @@ import socket
 
 from .helpers import is_ipv4_address
 from .base_proxy import BaseProxy
-from ..errors import InvalidServerReply, ProxyError
+from .errors import ProxyError
 
 RSV = NULL = 0x00
 SOCKS_VER4 = 0x04
@@ -21,13 +21,17 @@ SOCKS4_ERRORS = {
 
 class Socks4Proxy(BaseProxy):
     def __init__(self, loop, proxy_host, proxy_port,
-                 user_id=None, rdns=False):
+                 user_id=None, rdns=None):
         super().__init__(
             loop=loop,
             proxy_host=proxy_host,
             proxy_port=proxy_port,
             family=socket.AF_INET
         )
+
+        if rdns is None:
+            rdns = False
+
         self._user_id = user_id
         self._rdns = rdns
 
@@ -69,7 +73,7 @@ class Socks4Proxy(BaseProxy):
         rsv, code, *_ = await self.read(8)
 
         if rsv != NULL:  # pragma: no cover
-            raise InvalidServerReply('SOCKS4 proxy server sent invalid data')
+            raise ProxyError('SOCKS4 proxy server sent invalid data')
 
         if code != SOCKS4_GRANTED:  # pragma: no cover
             error = SOCKS4_ERRORS.get(code, 'Unknown error')

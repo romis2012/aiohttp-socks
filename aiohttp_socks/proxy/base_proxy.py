@@ -2,7 +2,7 @@ import asyncio
 import socket
 
 from .mixins import StreamSocketReadWriteMixin, ResolveMixin
-from ..errors import ProxyConnectionError, ProxyError
+from .errors import ProxyConnectionError, ProxyError
 
 
 class BaseProxy(StreamSocketReadWriteMixin, ResolveMixin):

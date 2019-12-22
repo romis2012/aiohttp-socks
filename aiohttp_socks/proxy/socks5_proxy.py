@@ -3,9 +3,7 @@ import socket
 
 from .helpers import is_ip_address
 from .base_proxy import BaseProxy
-from ..errors import (InvalidServerReply, ProxyError, InvalidServerVersion,
-                      NoAcceptableAuthMethods, UnknownAuthMethod,
-                      LoginAuthenticationFailed)
+from .errors import ProxyError
 
 RSV = NULL = 0x00
 SOCKS_VER5 = 0x05
@@ -35,13 +33,17 @@ SOCKS5_ERRORS = {
 
 class Socks5Proxy(BaseProxy):
     def __init__(self, loop, proxy_host, proxy_port, username=None,
-                 password=None, rdns=True, family=socket.AF_INET):
+                 password=None, rdns=None, family=socket.AF_INET):
         super().__init__(
             loop=loop,
             proxy_host=proxy_host,
             proxy_port=proxy_port,
             family=family
         )
+
+        if rdns is None:
+            rdns = True
+
         self._username = username
         self._password = password
         self._rdns = rdns
@@ -64,19 +66,17 @@ class Socks5Proxy(BaseProxy):
         ver, auth_method = await self.read(2)
 
         if ver != SOCKS_VER5:  # pragma: no cover
-            raise InvalidServerVersion(
-                'Unexpected SOCKS version number: %s' % ver
-            )
+            raise ProxyError(
+                'Unexpected SOCKS version number: {}'.format(ver))
 
         if auth_method == SOCKS5_AUTH_NO_ACCEPTABLE_METHODS:
-            raise NoAcceptableAuthMethods(
-                'No acceptable authentication methods were offered'
-            )
+            raise ProxyError(
+                'No acceptable authentication methods were offered')
 
         if auth_method not in auth_methods:
-            raise UnknownAuthMethod(
-                'Unexpected SOCKS authentication method: %s' % auth_method
-            )
+            raise ProxyError(
+                'Unexpected SOCKS authentication method: {}'.format(
+                    auth_method))
 
         # authenticate
         if auth_method == SOCKS5_AUTH_UNAME_PWD:
@@ -91,9 +91,9 @@ class Socks5Proxy(BaseProxy):
             ver, status = await self.read(2)
 
             if ver != 0x01:
-                raise InvalidServerReply('Invalid authentication response')
+                raise ProxyError('Invalid authentication response')
             if status != SOCKS5_GRANTED:
-                raise LoginAuthenticationFailed(
+                raise ProxyError(
                     'Username and password authentication failure'
                 )
 
@@ -106,14 +106,13 @@ class Socks5Proxy(BaseProxy):
         ver, err_code, reserved = await self.read(3)
 
         if ver != SOCKS_VER5:
-            raise InvalidServerVersion(
-                'Unexpected SOCKS version number: {}'.format(ver))
+            raise ProxyError('Unexpected SOCKS version number: {}'.format(ver))
 
         if err_code != NULL:
             raise ProxyError(SOCKS5_ERRORS.get(err_code, 'Unknown error'))
 
         if reserved != RSV:
-            raise InvalidServerReply('The reserved byte must be 0x00')
+            raise ProxyError('The reserved byte must be 0x00')
 
         # read all available data (binded address)
         await self.read_all()
