@@ -7,7 +7,7 @@ import aiohttp
 import pytest
 
 from aiohttp_socks import (
-    ProxyConnector, ProxyType,
+    ProxyType, ProxyConnector, ChainProxyConnector, ProxyInfo,
     ProxyError, ProxyConnectionError,
     open_connection, create_connection)
 
@@ -136,6 +136,51 @@ async def test_socks4_proxy(url, rdns):
 @pytest.mark.asyncio
 async def test_http_proxy(url):
     connector = ProxyConnector.from_url(HTTP_PROXY_URL)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        async with session.get(url) as resp:
+            assert resp.status == 200
+
+
+@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.asyncio
+async def test_chain_proxy_from_url(url):
+    connector = ChainProxyConnector.from_urls([
+        SOCKS5_IPV4_URL,
+        SOCKS4_URL,
+        HTTP_PROXY_URL
+    ])
+    async with aiohttp.ClientSession(connector=connector) as session:
+        async with session.get(url) as resp:
+            assert resp.status == 200
+
+
+@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.parametrize('rdns', (True, False))
+@pytest.mark.asyncio
+async def test_chain_proxy_ctor(url, rdns):
+    connector = ChainProxyConnector([
+        ProxyInfo(
+            proxy_type=ProxyType.SOCKS5,
+            host=SOCKS5_IPV4_HOST,
+            port=SOCKS5_IPV4_PORT,
+            username=LOGIN,
+            password=PASSWORD,
+            rdns=rdns
+        ),
+        ProxyInfo(
+            proxy_type=ProxyType.SOCKS4,
+            host=SOCKS4_HOST,
+            port=SOCKS4_PORT,
+            rdns=rdns
+        ),
+        ProxyInfo(
+            proxy_type=ProxyType.HTTP,
+            host=HTTP_PROXY_HOST,
+            port=HTTP_PROXY_PORT,
+            username=LOGIN,
+            password=PASSWORD
+        ),
+    ])
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as resp:
             assert resp.status == 200
