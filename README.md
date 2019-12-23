@@ -5,11 +5,11 @@
 [![PyPI version](https://badge.fury.io/py/aiohttp-socks.svg)](https://badge.fury.io/py/aiohttp-socks)
 
 Proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). 
-SOCKS4(a), SOCKS5, HTTP (tunneling) proxy are supported.
+SOCKS4(a), SOCKS5, HTTP (tunneling), Proxy chains are supported.
 
 ## Requirements
 - Python >= 3.5.3
-- aiohttp >= 2.3.2  # including v3.x
+- aiohttp >= 2.3.2
 
 ## Installation
 ```
@@ -21,7 +21,7 @@ pip install aiohttp_socks
 #### aiohttp usage:
 ```python
 import aiohttp
-from aiohttp_socks import ProxyConnector, ProxyType
+from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 
 
 async def fetch(url):
@@ -38,6 +38,13 @@ async def fetch(url):
     #     password='password',
     #     rdns=True
     # )
+    
+    ### proxy chaining (since ver 0.3.3)
+    # connector = ChainProxyConnector.from_urls([
+    #     'socks5://user:password@127.0.0.1:1080',
+    #     'socks4://127.0.0.1:1081',
+    #     'http://user:password@127.0.0.1:3128',
+    # ])
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as response:
             return await response.text()
