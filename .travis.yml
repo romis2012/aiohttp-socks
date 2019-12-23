@@ -25,9 +25,9 @@ script:
 after_success:
   - coveralls
 
-cache:
-  directories:
-    - $HOME/.cache/pip
+#cache:
+#  directories:
+#    - $HOME/.cache/pip
 
 notifications:
   email: false
