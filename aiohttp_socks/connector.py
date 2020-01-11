@@ -74,7 +74,7 @@ class ProxyConnector(TCPConnector):
     def __init__(self, proxy_type=ProxyType.SOCKS5,
                  host=None, port=None,
                  username=None, password=None,
-                 rdns=None, family=socket.AF_INET, **kwargs):
+                 rdns=None, family=None, **kwargs):
 
         kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
@@ -118,7 +118,7 @@ class ProxyInfo:
     username = attr.ib(type=str, default=None)
     password = attr.ib(type=str, default=None)
     rdns = attr.ib(type=bool, default=None)
-    family = attr.ib(type=int, default=socket.AF_INET)
+    family = attr.ib(type=int, default=None)
 
 
 class ChainProxyConnector(TCPConnector):

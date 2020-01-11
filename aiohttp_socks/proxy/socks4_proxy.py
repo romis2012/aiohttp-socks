@@ -26,7 +26,7 @@ class Socks4Proxy(BaseProxy):
             loop=loop,
             proxy_host=proxy_host,
             proxy_port=proxy_port,
-            family=socket.AF_INET
+            family=None
         )
 
         if rdns is None:

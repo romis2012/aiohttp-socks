@@ -1,5 +1,3 @@
-import socket
-
 from aiohttp import BasicAuth
 from aiohttp.http import SERVER_SOFTWARE
 from .errors import ProxyError
@@ -12,7 +10,7 @@ CRLF_B = CRLF.encode('ascii')
 
 class HttpProxy(BaseProxy):
     def __init__(self, loop, proxy_host, proxy_port,
-                 username=None, password=None, family=socket.AF_INET):
+                 username=None, password=None, family=None):
         super().__init__(
             loop=loop,
             proxy_host=proxy_host,

@@ -1,5 +1,4 @@
 import asyncio
-import socket
 
 from .proxy import ProxyType, create_proxy, parse_proxy_url
 
@@ -8,7 +7,7 @@ async def open_connection(proxy_url=None, host=None, port=None, *,
                           proxy_type=ProxyType.SOCKS5,
                           proxy_host='127.0.0.1', proxy_port=1080,
                           username=None, password=None, rdns=True,
-                          family=socket.AF_INET,
+                          family=None,
                           loop=None, **kwargs):
     if host is None or port is None:
         raise ValueError('host and port must be specified')  # pragma: no cover
@@ -37,7 +36,7 @@ async def create_connection(proxy_url=None, protocol_factory=None,
                             proxy_type=ProxyType.SOCKS5,
                             proxy_host='127.0.0.1', proxy_port=1080,
                             username=None, password=None, rdns=True,
-                            family=socket.AF_INET,
+                            family=None,
                             loop=None, **kwargs):
     if protocol_factory is None:
         raise ValueError('protocol_factory '

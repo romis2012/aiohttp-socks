@@ -33,7 +33,7 @@ SOCKS5_ERRORS = {
 
 class Socks5Proxy(BaseProxy):
     def __init__(self, loop, proxy_host, proxy_port, username=None,
-                 password=None, rdns=None, family=socket.AF_INET):
+                 password=None, rdns=None, family=None):
         super().__init__(
             loop=loop,
             proxy_host=proxy_host,

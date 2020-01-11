@@ -1,5 +1,4 @@
 import asyncio
-import socket
 import ssl
 
 import aiohttp
@@ -115,8 +114,7 @@ async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port):
 @pytest.mark.skipif(SKIP_IPV6_TESTS, reason='TravisCI doesn`t support ipv6')
 @pytest.mark.asyncio
 async def test_socks5_proxy_ipv6():
-    connector = ProxyConnector.from_url(SOCKS5_IPV6_URL,
-                                        family=socket.AF_INET6)
+    connector = ProxyConnector.from_url(SOCKS5_IPV6_URL)
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(HTTP_TEST_URL) as resp:
             assert resp.status == 200

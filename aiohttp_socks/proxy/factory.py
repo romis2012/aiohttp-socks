@@ -1,5 +1,4 @@
 import asyncio
-import socket
 
 from .enums import ProxyType
 from .http_proxy import HttpProxy
@@ -8,7 +7,7 @@ from .socks5_proxy import Socks5Proxy
 
 
 def create_proxy(proxy_type, host, port, username=None, password=None,
-                 rdns=None, family=socket.AF_INET, loop=None):
+                 rdns=None, family=None, loop=None):
 
     if loop is None:
         loop = asyncio.get_event_loop()

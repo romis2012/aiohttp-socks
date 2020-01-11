@@ -1,19 +1,25 @@
 import asyncio
 import socket
+import warnings
 
+from .helpers import is_ipv4_address, is_ipv6_address
 from .mixins import StreamSocketReadWriteMixin, ResolveMixin
 from .errors import ProxyConnectionError, ProxyError
 from .abc import AbstractProxy
 
 
 class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
-    def __init__(self, loop, proxy_host, proxy_port, family=socket.AF_INET):
+    def __init__(self, loop, proxy_host, proxy_port, family=None):
+        if family is not None:
+            warnings.warn('Parameter family is deprecated '
+                          'and will be ignored.', DeprecationWarning,
+                          stacklevel=2)
+
         self._loop = loop
         self._proxy_host = proxy_host
         self._proxy_port = proxy_port
         self._dest_host = None
         self._dest_port = None
-        self._family = family
         self._socket = None
 
     async def connect(self, dest_host, dest_port, _socket=None):
@@ -21,8 +27,12 @@ class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
         self._dest_port = dest_port
 
         if _socket is None:
-            self._create_socket()
-            await self._connect_to_proxy()
+            family, host = await self._resolve_proxy_host()
+            self._create_socket(family=family)
+            await self._connect_to_proxy(
+                host=host,
+                port=self._proxy_port
+            )
         else:
             self._socket = _socket
 
@@ -39,28 +49,35 @@ class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
     async def negotiate(self):  # pragma: no cover
         raise NotImplementedError()
 
-    def _create_socket(self):
+    def _create_socket(self, family):
         self._socket = socket.socket(
-            family=self._family,
+            family=family,
             type=socket.SOCK_STREAM
         )
         self._socket.setblocking(False)
 
-    async def _connect_to_proxy(self):
+    async def _connect_to_proxy(self, host, port):
         try:
             await self._loop.sock_connect(
                 sock=self._socket,
-                address=(self._proxy_host, self._proxy_port)
+                address=(host, port)
             )
         except OSError as e:
             self.close()
-            raise ProxyConnectionError(
-                e.errno,
-                'Can not connect to proxy {}:{} [{}]'.format(
-                    self._proxy_host, self._proxy_port, e.strerror)) from e
+            msg = 'Can not connect to proxy {}:{} [{}]'.format(
+                host, port, e.strerror)
+            raise ProxyConnectionError(e.errno, msg) from e
         except asyncio.CancelledError:  # pragma: no cover
             self.close()
             raise
+
+    async def _resolve_proxy_host(self):
+        host = self._proxy_host
+        if is_ipv4_address(host):
+            return socket.AF_INET, host
+        if is_ipv6_address(host):
+            return socket.AF_INET6, host
+        return await self.resolve(host=host)
 
     def _can_be_closed_safely(self):  # pragma: no cover
         def is_proactor_event_loop():
