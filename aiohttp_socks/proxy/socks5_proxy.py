@@ -109,7 +109,8 @@ class Socks5Proxy(BaseProxy):
             raise ProxyError('Unexpected SOCKS version number: {}'.format(ver))
 
         if err_code != NULL:
-            raise ProxyError(SOCKS5_ERRORS.get(err_code, 'Unknown error'), err_code)
+            raise ProxyError(SOCKS5_ERRORS.get(err_code, 'Unknown error'),
+                             err_code)
 
         if reserved != RSV:
             raise ProxyError('The reserved byte must be 0x00')

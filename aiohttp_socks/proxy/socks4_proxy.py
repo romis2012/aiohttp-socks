@@ -77,4 +77,5 @@ class Socks4Proxy(BaseProxy):
 
         if code != SOCKS4_GRANTED:  # pragma: no cover
             error = SOCKS4_ERRORS.get(code, 'Unknown error')
-            raise ProxyError('[Errno {0:#04x}]: {1}'.format(code, error), error)
+            raise ProxyError('[Errno {0:#04x}]: {1}'.format(code, error),
+                             error)
