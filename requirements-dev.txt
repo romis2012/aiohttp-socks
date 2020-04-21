@@ -1,7 +1,7 @@
 flake8>=3.6.0
 psutil>=5.4.8
-pytest>=4.0.0
-pytest-asyncio>=0.9.0
+pytest>=5.4.0
+pytest-asyncio>=0.11.0
 coverage==4.5.4
 pytest-cov>=2.6.0
 coveralls>=1.5.1
