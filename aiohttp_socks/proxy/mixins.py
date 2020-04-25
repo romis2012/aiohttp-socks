@@ -44,7 +44,7 @@ class StreamSocketReadWriteMixin:
 class ResolveMixin:
     _loop = None
 
-    async def resolve(self, host, port=0, family=socket.AF_INET):
+    async def resolve(self, host, port=0, family=socket.AF_UNSPEC):
         infos = await self._loop.getaddrinfo(
             host=host, port=port,
             family=family, type=socket.SOCK_STREAM)

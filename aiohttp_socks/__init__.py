@@ -9,7 +9,7 @@ from .proxy.errors import (
     SocksError, SocksConnectionError,
 )
 
-__version__ = '0.3.8'
+__version__ = '0.3.9'
 
 __all__ = ('SocksConnector', 'ProxyConnector', 'ChainProxyConnector',
            'ProxyInfo', 'SocksVer', 'ProxyType',
