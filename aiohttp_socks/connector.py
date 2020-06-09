@@ -34,7 +34,7 @@ class SocksConnector(TCPConnector):  # pragma: no cover
         if rdns:
             kwargs['resolver'] = NoResolver()
 
-        super().__init__(**kwargs)
+        super().__init__(family=family, **kwargs)
 
         self._socks_ver = socks_ver
         self._socks_host = host
