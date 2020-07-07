@@ -53,5 +53,7 @@ class ResolveMixin:
             raise OSError('Can`t resolve address {}:{} [{}]'.format(
                 host, port, family))
 
+        infos = sorted(infos, key=lambda info: info[0])
+
         family, _, _, _, address = infos[0]
         return family, address[0]
