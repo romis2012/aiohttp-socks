@@ -1,8 +1,14 @@
+import sys
+
 from aiohttp import BasicAuth
-from aiohttp.http import SERVER_SOFTWARE
 from .errors import ProxyError
 
 from .base_proxy import BaseProxy
+
+from .. import __title__, __version__
+
+USER_AGENT = 'Python/{0[0]}.{0[1]} {1}/{2}'.format(
+    sys.version_info, __title__, __version__)
 
 CRLF = '\r\n'
 CRLF_B = CRLF.encode('ascii')
@@ -30,7 +36,7 @@ class HttpProxy(BaseProxy):
         req = []
         req.append('CONNECT {}:{} HTTP/1.1'.format(host, port))
         req.append('Host: {}:{}'.format(host, port))
-        req.append('User-Agent: {}'.format(SERVER_SOFTWARE))
+        req.append('User-Agent: {}'.format(USER_AGENT))
 
         if login and password:
             auth = BasicAuth(login, password)

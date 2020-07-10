@@ -8,5 +8,9 @@ class ProxyConnectionError(OSError):
     pass
 
 
+class ProxyTimeoutError(Exception):
+    pass
+
+
 SocksError = ProxyError
 SocksConnectionError = ProxyConnectionError

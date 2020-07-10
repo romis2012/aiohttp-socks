@@ -81,7 +81,6 @@ class ProxyConnector(TCPConnector):
                  host=None, port=None,
                  username=None, password=None,
                  rdns=None, family=None, **kwargs):
-
         kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
@@ -104,12 +103,13 @@ class ProxyConnector(TCPConnector):
             username=self._proxy_username, password=self._proxy_password,
             rdns=self._rdns, family=self._proxy_family)
 
+        sock_connect = None
+
         timeout = kwargs.get('timeout')
-        if timeout is not None and hasattr(timeout, 'sock_connect'):
-            with CeilTimeout(timeout.sock_connect):
-                await proxy.connect(host, port)
-        else:
-            await proxy.connect(host, port)
+        if timeout is not None:
+            sock_connect = getattr(timeout, 'sock_connect', None)
+
+        await proxy.connect(host, port, timeout=sock_connect)
 
         return await super()._wrap_create_connection(
             protocol_factory, None, None, sock=proxy.socket, **kwargs)

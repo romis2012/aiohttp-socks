@@ -1,5 +1,5 @@
 class AbstractProxy:
-    async def connect(self, dest_host, dest_port,
+    async def connect(self, dest_host, dest_port, timeout=None,
                       _socket=None):  # pragma: no cover
         raise NotImplementedError()
 

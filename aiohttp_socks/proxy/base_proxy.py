@@ -2,9 +2,11 @@ import asyncio
 import socket
 import warnings
 
+import async_timeout
+
 from .helpers import is_ipv4_address, is_ipv6_address
 from .mixins import StreamSocketReadWriteMixin, ResolveMixin
-from .errors import ProxyConnectionError, ProxyError
+from .errors import ProxyConnectionError, ProxyError, ProxyTimeoutError
 from .abc import AbstractProxy
 
 
@@ -22,39 +24,40 @@ class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
         self._dest_port = None
         self._socket = None
 
-    async def connect(self, dest_host, dest_port, _socket=None):
+    async def connect(self, dest_host, dest_port, timeout=None, _socket=None):
         self._dest_host = dest_host
         self._dest_port = dest_port
 
-        if _socket is None:
-            family, host = await self._resolve_proxy_host()
-            self._create_socket(family=family)
-            await self._connect_to_proxy(
-                host=host,
-                port=self._proxy_port
-            )
-        else:
-            self._socket = _socket
+        async with async_timeout.timeout(timeout):
+            if _socket is None:
+                proxy_family, proxy_host = await self._resolve_proxy_host()
 
-        try:
-            await self.negotiate()
-        except ProxyError:
-            self.close()
-            raise
-        except asyncio.CancelledError:  # pragma: no cover
-            if self._can_be_closed_safely():
+                self._socket = socket.socket(
+                    family=proxy_family,
+                    type=socket.SOCK_STREAM
+                )
+                self._socket.setblocking(False)
+
+                await self._connect_to_proxy(
+                    host=proxy_host,
+                    port=self._proxy_port
+                )
+            else:
+                self._socket = _socket
+
+            try:
+                await self.negotiate()
+            except ProxyError:
                 self.close()
-            raise
+                raise
+            except asyncio.CancelledError as e:  # pragma: no cover
+                if self._can_be_closed_safely():
+                    self.close()
+                raise ProxyTimeoutError('Proxy connection timed out: %s'
+                                        % timeout) from e
 
     async def negotiate(self):  # pragma: no cover
         raise NotImplementedError()
-
-    def _create_socket(self, family):
-        self._socket = socket.socket(
-            family=family,
-            type=socket.SOCK_STREAM
-        )
-        self._socket.setblocking(False)
 
     async def _connect_to_proxy(self, host, port):
         try:

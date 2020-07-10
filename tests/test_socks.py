@@ -7,7 +7,7 @@ import pytest
 
 from aiohttp_socks import (
     ProxyType, ProxyConnector, ChainProxyConnector, ProxyInfo,
-    ProxyError, ProxyConnectionError,
+    ProxyError, ProxyConnectionError, ProxyTimeoutError,
     open_connection, create_connection)
 
 from tests.conftest import (
@@ -93,6 +93,16 @@ async def test_socks5_proxy_with_timeout():
     with pytest.raises(asyncio.TimeoutError):
         async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(HTTP_URL_DELAY_3_SEC, timeout=1) as resp:
+                await resp.text()
+
+
+@pytest.mark.asyncio
+async def test_socks5_proxy_with_proxy_connect_timeout():
+    connector = ProxyConnector.from_url(SOCKS5_IPV4_URL)
+    timeout = aiohttp.ClientTimeout(total=32, sock_connect=0.001)
+    with pytest.raises(ProxyTimeoutError):
+        async with aiohttp.ClientSession(connector=connector) as session:
+            async with session.get(HTTP_TEST_URL, timeout=timeout) as resp:
                 await resp.text()
 
 
