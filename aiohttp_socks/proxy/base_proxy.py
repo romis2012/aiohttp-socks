@@ -23,12 +23,14 @@ class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
         self._dest_host = None
         self._dest_port = None
         self._socket = None
+        self._timeout = None
 
     async def connect(self, dest_host, dest_port, timeout=None, _socket=None):
         self._dest_host = dest_host
         self._dest_port = dest_port
+        self._timeout = timeout
 
-        async with async_timeout.timeout(timeout):
+        async with async_timeout.timeout(self._timeout):
             if _socket is None:
                 proxy_family, proxy_host = await self._resolve_proxy_host()
 
@@ -54,7 +56,7 @@ class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
                 if self._can_be_closed_safely():
                     self.close()
                 raise ProxyTimeoutError('Proxy connection timed out: %s'
-                                        % timeout) from e
+                                        % self._timeout) from e
 
     async def negotiate(self):  # pragma: no cover
         raise NotImplementedError()
@@ -70,9 +72,10 @@ class BaseProxy(AbstractProxy, StreamSocketReadWriteMixin, ResolveMixin):
             msg = 'Can not connect to proxy {}:{} [{}]'.format(
                 host, port, e.strerror)
             raise ProxyConnectionError(e.errno, msg) from e
-        except asyncio.CancelledError:  # pragma: no cover
+        except asyncio.CancelledError as e:  # pragma: no cover
             self.close()
-            raise
+            raise ProxyTimeoutError('Proxy connection timed out: %s'
+                                    % self._timeout) from e
 
     async def _resolve_proxy_host(self):
         host = self._proxy_host

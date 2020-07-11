@@ -1,5 +1,5 @@
 __title__ = 'aiohttp-socks'
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 from .proxy import SocksVer, ProxyType
 from .connector import (
