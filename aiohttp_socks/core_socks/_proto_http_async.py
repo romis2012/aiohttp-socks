@@ -1,30 +1,19 @@
-import sys
-
-from aiohttp import BasicAuth
-from .errors import ProxyError
-
-from .base_proxy import BaseProxy
-
-from .. import __title__, __version__
-
-USER_AGENT = 'Python/{0[0]}.{0[1]} {1}/{2}'.format(
-    sys.version_info, __title__, __version__)
-
-CRLF = '\r\n'
-CRLF_B = CRLF.encode('ascii')
+from ._basic_auth import BasicAuth
+from ._errors import ProxyError
+from ._proto_http import DEFAULT_USER_AGENT, CRLF
+from ._stream_async import AsyncSocketStream
 
 
-class HttpProxy(BaseProxy):
-    def __init__(self, loop, proxy_host, proxy_port,
-                 username=None, password=None, family=None):
-        super().__init__(
-            loop=loop,
-            proxy_host=proxy_host,
-            proxy_port=proxy_port,
-            family=family
-        )
+class HttpProto:
+    def __init__(self, stream: AsyncSocketStream, dest_host, dest_port,
+                 username=None, password=None):
+
+        self._dest_host = dest_host
+        self._dest_port = dest_port
         self._username = username
         self._password = password
+
+        self._stream = stream
 
     async def negotiate(self):
         host = self._dest_host
@@ -36,7 +25,7 @@ class HttpProxy(BaseProxy):
         req = []
         req.append('CONNECT {}:{} HTTP/1.1'.format(host, port))
         req.append('Host: {}:{}'.format(host, port))
-        req.append('User-Agent: {}'.format(USER_AGENT))
+        req.append('User-Agent: {}'.format(DEFAULT_USER_AGENT))
 
         if login and password:
             auth = BasicAuth(login, password)
@@ -46,14 +35,14 @@ class HttpProxy(BaseProxy):
 
         data = CRLF.join(req).encode('ascii')
 
-        await self.write_all(data)
+        await self._stream.write_all(data)
 
-        res = await self.read_all()
+        res = await self._stream.read()
 
         if not res:
             raise ProxyError('Invalid proxy response')  # pragma: no cover'
 
-        line = res.split(CRLF_B, 1)[0]
+        line = res.split(CRLF.encode('ascii'), 1)[0]
         line = line.decode('utf-8', 'surrogateescape')
 
         try:

@@ -14,14 +14,46 @@ SOCKS5_IPV6_PORT = 7780
 
 SOCKS5_IPV4_HOST = '127.0.0.1'
 SOCKS5_IPV4_PORT = 7780
+SOCKS5_IPV4_PORT_WO_AUTH = 7781
 
 SOCKS4_HOST = '127.0.0.1'
-SOCKS4_PORT = 7781
+SOCKS4_PORT = 7782
 
 HTTP_PROXY_HOST = '127.0.0.1'
-HTTP_PROXY_PORT = 7782
+HTTP_PROXY_PORT = 7783
 
 SKIP_IPV6_TESTS = 'SKIP_IPV6_TESTS' in os.environ
+
+SOCKS5_IPV4_URL = 'socks5://{login}:{password}@{host}:{port}'.format(
+    host=SOCKS5_IPV4_HOST,
+    port=SOCKS5_IPV4_PORT,
+    login=LOGIN,
+    password=PASSWORD,
+)
+
+SOCKS5_IPV6_URL = 'socks5://{login}:{password}@{host}:{port}'.format(
+    host='[%s]' % SOCKS5_IPV6_HOST,
+    port=SOCKS5_IPV6_PORT,
+    login=LOGIN,
+    password=PASSWORD,
+)
+
+SOCKS5_IPV4_URL_WO_AUTH = 'socks5://{host}:{port}'.format(
+    host=SOCKS5_IPV4_HOST,
+    port=SOCKS5_IPV4_PORT_WO_AUTH
+)
+
+SOCKS4_URL = 'socks4://{host}:{port}'.format(
+    host=SOCKS4_HOST,
+    port=SOCKS4_PORT,
+)
+
+HTTP_PROXY_URL = 'http://{login}:{password}@{host}:{port}'.format(
+    host=HTTP_PROXY_HOST,
+    port=HTTP_PROXY_PORT,
+    login=LOGIN,
+    password=PASSWORD,
+)
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -39,7 +71,12 @@ def proxy_server():
                                              SOCKS5_IPV6_HOST))
 
         cfg.write('auth strong\n')
-        cfg.write('socks -p%d -i%s\n' % (SOCKS5_IPV4_PORT, SOCKS5_IPV4_HOST))
+        cfg.write('socks -p%d -i%s\n' % (SOCKS5_IPV4_PORT,
+                                         SOCKS5_IPV4_HOST))
+
+        cfg.write('auth none\n')
+        cfg.write('socks -p%d -i%s\n' % (SOCKS5_IPV4_PORT_WO_AUTH,
+                                         SOCKS5_IPV4_HOST))
 
         cfg.write('auth none\n')
         cfg.write('socks -p%d -i%s\n' % (SOCKS4_PORT, SOCKS4_HOST))

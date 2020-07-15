@@ -1,13 +1,13 @@
 import asyncio
 
-from .proxy import ProxyType, create_proxy, parse_proxy_url
+from .core_socks import ProxyType, parse_proxy_url
+from .core_socks.async_.asyncio import Proxy
 
 
 async def open_connection(proxy_url=None, host=None, port=None, *,
                           proxy_type=ProxyType.SOCKS5,
                           proxy_host='127.0.0.1', proxy_port=1080,
                           username=None, password=None, rdns=True,
-                          family=None,
                           loop=None, **kwargs):
     if host is None or port is None:
         raise ValueError('host and port must be specified')  # pragma: no cover
@@ -19,16 +19,26 @@ async def open_connection(proxy_url=None, host=None, port=None, *,
         proxy_type, proxy_host, proxy_port, username, password \
             = parse_proxy_url(proxy_url)
 
-    proxy = create_proxy(
-        loop=loop,
-        proxy_type=proxy_type, host=proxy_host, port=proxy_port,
-        username=username, password=password, rdns=rdns, family=family)
+    proxy = Proxy.create(
+        proxy_type=proxy_type,
+        host=proxy_host,
+        port=proxy_port,
+        username=username,
+        password=password,
+        rdns=rdns,
+        loop=loop
+    )
 
-    await proxy.connect(host, port)
+    sock = await proxy.connect(host, port)
 
     # noinspection PyTypeChecker
     return await asyncio.open_connection(
-        loop=loop, host=None, port=None, sock=proxy.socket, **kwargs)
+        loop=loop,
+        host=None,
+        port=None,
+        sock=sock,
+        **kwargs
+    )
 
 
 async def create_connection(proxy_url=None, protocol_factory=None,
@@ -36,7 +46,6 @@ async def create_connection(proxy_url=None, protocol_factory=None,
                             proxy_type=ProxyType.SOCKS5,
                             proxy_host='127.0.0.1', proxy_port=1080,
                             username=None, password=None, rdns=True,
-                            family=None,
                             loop=None, **kwargs):
     if protocol_factory is None:
         raise ValueError('protocol_factory '
@@ -53,13 +62,22 @@ async def create_connection(proxy_url=None, protocol_factory=None,
         proxy_type, proxy_host, proxy_port, username, password \
             = parse_proxy_url(proxy_url)
 
-    proxy = create_proxy(
-        loop=loop,
-        proxy_type=proxy_type, host=proxy_host, port=proxy_port,
-        username=username, password=password, rdns=rdns, family=family)
+    proxy = Proxy.create(
+        proxy_type=proxy_type,
+        host=proxy_host,
+        port=proxy_port,
+        username=username,
+        password=password,
+        rdns=rdns,
+        loop=loop
+    )
 
-    await proxy.connect(host, port)
+    sock = await proxy.connect(host, port)
 
     return await loop.create_connection(
         protocol_factory=protocol_factory,
-        host=None, port=None, sock=proxy.socket, **kwargs)
+        host=None,
+        port=None,
+        sock=sock,
+        **kwargs
+    )

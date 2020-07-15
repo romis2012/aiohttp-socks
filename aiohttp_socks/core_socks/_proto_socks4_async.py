@@ -1,39 +1,33 @@
 import ipaddress
 import socket
 
-from .helpers import is_ipv4_address
-from .base_proxy import BaseProxy
-from .errors import ProxyError
-
-RSV = NULL = 0x00
-SOCKS_VER4 = 0x04
-SOCKS_CMD_CONNECT = 0x01
-SOCKS4_GRANTED = 0x5A
-
-SOCKS4_ERRORS = {
-    0x5B: 'Request rejected or failed',
-    0x5C: 'Request rejected because SOCKS server '
-          'cannot connect to identd on the client',
-    0x5D: 'Request rejected because the client program '
-          'and identd report different user-ids'
-}
+from ._errors import ProxyError
+from ._helpers import is_ipv4_address
+from ._proto_socks4 import (
+    NULL,
+    SOCKS_VER4,
+    SOCKS_CMD_CONNECT,
+    SOCKS4_GRANTED,
+    SOCKS4_ERRORS
+)
+from ._stream_async import AsyncSocketStream
 
 
-class Socks4Proxy(BaseProxy):
-    def __init__(self, loop, proxy_host, proxy_port,
-                 user_id=None, rdns=None):
-        super().__init__(
-            loop=loop,
-            proxy_host=proxy_host,
-            proxy_port=proxy_port,
-            family=None
-        )
+class Socks4Proto:
+    def __init__(self, stream: AsyncSocketStream,
+                 dest_host, dest_port, user_id=None,
+                 rdns=None):
 
         if rdns is None:
             rdns = False
 
+        self._dest_host = dest_host
+        self._dest_port = dest_port
+
         self._user_id = user_id
         self._rdns = rdns
+
+        self._stream = stream
 
     async def negotiate(self):
         await self._socks_connect()
@@ -54,7 +48,10 @@ class Socks4Proxy(BaseProxy):
                 host_bytes = bytes([NULL, NULL, NULL, 0x01])
             else:
                 # resolve locally
-                _, addr = await self.resolve(host, family=socket.AF_INET)
+                _, addr = await self._stream.resolver.resolve(
+                    host,
+                    family=socket.AF_INET
+                )
                 host_bytes = ipaddress.ip_address(addr).packed
 
         # build and send connect command
@@ -68,14 +65,14 @@ class Socks4Proxy(BaseProxy):
         if include_hostname:
             req += [host.encode('idna'), NULL]
 
-        await self.write(req)
+        await self._stream.write(req)
 
-        rsv, code, *_ = await self.read(8)
+        rsv, code, *_ = await self._stream.read_exact(8)
 
         if rsv != NULL:  # pragma: no cover
             raise ProxyError('SOCKS4 proxy server sent invalid data')
 
         if code != SOCKS4_GRANTED:  # pragma: no cover
             error = SOCKS4_ERRORS.get(code, 'Unknown error')
-            raise ProxyError('[Errno {0:#04x}]: {1}'.format(code, error),
+            raise ProxyError('[Errno 0x{0:02x}]: {1}'.format(code, error),
                              code)

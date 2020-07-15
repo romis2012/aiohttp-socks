@@ -8,7 +8,7 @@ Proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp).
 SOCKS4(a), SOCKS5, HTTP (tunneling), Proxy chains are supported.
 
 ## Requirements
-- Python >= 3.5.3
+- Python >= 3.6
 - aiohttp >= 2.3.2
 
 ## Installation
@@ -25,8 +25,6 @@ from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 
 
 async def fetch(url):
-    # We have added http proxy support, so SocksConnector has been deprecated
-    # connector = SocksConnector.from_url('socks5://user:password@127.0.0.1:1080')
     connector = ProxyConnector.from_url('socks5://user:password@127.0.0.1:1080')
     
     ### or use ProxyConnector constructor

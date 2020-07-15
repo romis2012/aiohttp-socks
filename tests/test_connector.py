@@ -2,58 +2,42 @@ import asyncio
 import ssl
 
 import aiohttp
-# noinspection PyPackageRequirements
-import pytest
+import pytest  # noqa
+from yarl import URL  # noqa
 
 from aiohttp_socks import (
-    ProxyType, ProxyConnector, ChainProxyConnector, ProxyInfo,
-    ProxyError, ProxyConnectionError, ProxyTimeoutError,
-    open_connection, create_connection)
+    ProxyType,
+    ProxyConnector,
+    ChainProxyConnector,
+    ProxyInfo,
+    ProxyError,
+    ProxyConnectionError,
+    ProxyTimeoutError,
+    open_connection,
+    create_connection
+)
 
 from tests.conftest import (
-    SOCKS5_IPV4_HOST, SOCKS5_IPV4_PORT,
-    LOGIN, PASSWORD, SOCKS5_IPV6_HOST,
-    SOCKS5_IPV6_PORT, SOCKS4_HOST, SOCKS4_PORT,
-    HTTP_PROXY_HOST, HTTP_PROXY_PORT,
-    SKIP_IPV6_TESTS)
+    SOCKS5_IPV4_HOST,
+    SOCKS5_IPV4_PORT,
+    LOGIN, PASSWORD,
+    SOCKS4_HOST,
+    SOCKS4_PORT,
+    HTTP_PROXY_HOST,
+    HTTP_PROXY_PORT,
+    SKIP_IPV6_TESTS,
+    SOCKS5_IPV4_URL,
+    SOCKS5_IPV6_URL,
+    SOCKS4_URL,
+    HTTP_PROXY_URL)
 
-HTTP_TEST_HOST = 'httpbin.org'
-HTTP_TEST_PORT = 80
-
-HTTPS_TEST_HOST = 'httpbin.org'
-HTTPS_TEST_PORT = 443
-
-HTTP_TEST_URL = 'http://%s/ip' % HTTP_TEST_HOST
-HTTPS_TEST_URL = 'https://%s/ip' % HTTP_TEST_HOST
+# HTTP_TEST_URL = 'http://httpbin.org/ip'
+# HTTPS_TEST_URL = 'https://httpbin.org/ip'
+HTTP_TEST_URL = 'http://check-host.net/ip'
+HTTPS_TEST_URL = 'https://check-host.net/ip'
 
 HTTP_URL_DELAY_3_SEC = 'http://httpbin.org/delay/3'
 HTTP_URL_REDIRECT = 'http://httpbin.org/redirect/1'
-
-SOCKS5_IPV4_URL = 'socks5://{LOGIN}:{PASSWORD}@{SOCKS5_IPV4_HOST}:{SOCKS5_IPV4_PORT}'.format(  # noqa
-    SOCKS5_IPV4_HOST=SOCKS5_IPV4_HOST,
-    SOCKS5_IPV4_PORT=SOCKS5_IPV4_PORT,
-    LOGIN=LOGIN,
-    PASSWORD=PASSWORD,
-)
-
-SOCKS5_IPV6_URL = 'socks5://{LOGIN}:{PASSWORD}@{SOCKS5_IPV6_HOST}:{SOCKS5_IPV6_PORT}'.format(  # noqa
-    SOCKS5_IPV6_HOST='[%s]' % SOCKS5_IPV6_HOST,
-    SOCKS5_IPV6_PORT=SOCKS5_IPV6_PORT,
-    LOGIN=LOGIN,
-    PASSWORD=PASSWORD,
-)
-
-SOCKS4_URL = 'socks4://{SOCKS4_HOST}:{SOCKS4_PORT}'.format(
-    SOCKS4_HOST=SOCKS4_HOST,
-    SOCKS4_PORT=SOCKS4_PORT,
-)
-
-HTTP_PROXY_URL = 'http://{LOGIN}:{PASSWORD}@{HTTP_PROXY_HOST}:{HTTP_PROXY_PORT}'.format(  # noqa
-    HTTP_PROXY_HOST=HTTP_PROXY_HOST,
-    HTTP_PROXY_PORT=HTTP_PROXY_PORT,
-    LOGIN=LOGIN,
-    PASSWORD=PASSWORD,
-)
 
 
 @pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
@@ -197,15 +181,17 @@ async def test_chain_proxy_ctor(url, rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_http_open_connection(rdns):
+    url = URL(HTTP_TEST_URL)
+
     reader, writer = await open_connection(
         proxy_url=SOCKS5_IPV4_URL,
-        host=HTTP_TEST_HOST,
-        port=HTTP_TEST_PORT,
+        host=url.host,
+        port=url.port,
         rdns=rdns,
     )
-    request = ("GET /ip HTTP/1.1\r\n"
+    request = ("GET %s HTTP/1.1\r\n"
                "Host: %s\r\n"
-               "Connection: close\r\n\r\n" % HTTP_TEST_HOST)
+               "Connection: close\r\n\r\n" % (url.path_qs, url.host))
 
     writer.write(request.encode())
     response = await reader.read(-1)
@@ -215,17 +201,19 @@ async def test_socks5_http_open_connection(rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_https_open_connection(rdns):
+    url = URL(HTTPS_TEST_URL)
+
     reader, writer = await open_connection(
         proxy_url=SOCKS5_IPV4_URL,
-        host=HTTPS_TEST_HOST,
-        port=HTTPS_TEST_PORT,
+        host=url.host,
+        port=url.port,
         ssl=ssl.create_default_context(),
-        server_hostname=HTTPS_TEST_HOST,
+        server_hostname=url.host,
         rdns=rdns,
     )
-    request = ("GET /ip HTTP/1.1\r\n"
+    request = ("GET %s HTTP/1.1\r\n"
                "Host: %s\r\n"
-               "Connection: close\r\n\r\n" % HTTPS_TEST_HOST)
+               "Connection: close\r\n\r\n" % (url.path_qs, url.host))
 
     writer.write(request.encode())
     response = await reader.read(-1)
@@ -235,15 +223,17 @@ async def test_socks5_https_open_connection(rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks4_http_open_connection(rdns):
+    url = URL(HTTP_TEST_URL)
+
     reader, writer = await open_connection(
         proxy_url=SOCKS4_URL,
-        host=HTTP_TEST_HOST,
-        port=HTTP_TEST_PORT,
+        host=url.host,
+        port=url.port,
         rdns=rdns,
     )
-    request = ("GET /ip HTTP/1.1\r\n"
+    request = ("GET %s HTTP/1.1\r\n"
                "Host: %s\r\n"
-               "Connection: close\r\n\r\n" % HTTP_TEST_HOST)
+               "Connection: close\r\n\r\n" % (url.path_qs, url.host))
 
     writer.write(request.encode())
     response = await reader.read(-1)
@@ -252,21 +242,23 @@ async def test_socks4_http_open_connection(rdns):
 
 @pytest.mark.asyncio
 async def test_socks5_http_create_connection(event_loop):
+    url = URL(HTTP_TEST_URL)
+
     reader = asyncio.StreamReader(loop=event_loop)
     protocol = asyncio.StreamReaderProtocol(reader, loop=event_loop)
 
     transport, _ = await create_connection(
         proxy_url=SOCKS5_IPV4_URL,
         protocol_factory=lambda: protocol,
-        host=HTTP_TEST_HOST,
-        port=HTTP_TEST_PORT,
+        host=url.host,
+        port=url.port,
     )
 
     writer = asyncio.StreamWriter(transport, protocol, reader, event_loop)
 
-    request = ("GET /ip HTTP/1.1\r\n"
+    request = ("GET %s HTTP/1.1\r\n"
                "Host: %s\r\n"
-               "Connection: close\r\n\r\n" % HTTP_TEST_HOST)
+               "Connection: close\r\n\r\n" % (url.path_qs, url.host))
 
     writer.write(request.encode())
     response = await reader.read(-1)
