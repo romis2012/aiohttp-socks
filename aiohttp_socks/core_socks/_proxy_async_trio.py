@@ -10,12 +10,14 @@ from ._proto_socks5_async import Socks5Proto
 from ._proto_http_async import HttpProto
 from ._proto_socks4_async import Socks4Proto
 
+DEFAULT_TIMEOUT = 60
+
 
 class Proxy:
     @classmethod
     def create(cls, proxy_type: ProxyType, host: str, port: int,
                username: str = None, password: str = None,
-               rdns: bool = None) -> 'BaseProxy':
+               rdns: bool = None) -> AsyncProxy:
 
         if proxy_type == ProxyType.SOCKS4:
             return Socks4Proxy(
@@ -46,7 +48,7 @@ class Proxy:
                          % proxy_type)
 
     @classmethod
-    def from_url(cls, url: str, **kwargs) -> 'BaseProxy':
+    def from_url(cls, url: str, **kwargs) -> AsyncProxy:
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls.create(
             proxy_type=proxy_type,
@@ -71,7 +73,7 @@ class BaseProxy(AsyncProxy):
 
     async def connect(self, dest_host, dest_port, timeout=None, _socket=None):
         if timeout is None:
-            timeout = 5
+            timeout = DEFAULT_TIMEOUT
 
         self._dest_host = dest_host
         self._dest_port = dest_port

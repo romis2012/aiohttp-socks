@@ -9,6 +9,8 @@ from ._proto_socks5_sync import Socks5Proto
 from ._proto_http_sync import HttpProto
 from ._proto_socks4_sync import Socks4Proto
 
+DEFAULT_TIMEOUT = 60
+
 
 class SyncProxy:
     def connect(self, dest_host, dest_port, timeout=None, _socket=None):
@@ -82,6 +84,9 @@ class BaseProxy(SyncProxy):
         self._stream = SyncSocketStream()
 
     def connect(self, dest_host, dest_port, timeout=None, _socket=None):
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+
         self._dest_host = dest_host
         self._dest_port = dest_port
         self._timeout = timeout

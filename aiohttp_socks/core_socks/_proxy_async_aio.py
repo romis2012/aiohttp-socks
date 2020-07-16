@@ -11,6 +11,8 @@ from ._proto_socks5_async import Socks5Proto
 from ._proto_http_async import HttpProto
 from ._proto_socks4_async import Socks4Proto
 
+DEFAULT_TIMEOUT = 60
+
 
 class Proxy:
     @classmethod
@@ -82,10 +84,23 @@ class BaseProxy(AsyncProxy):
         self._stream = SocketStream(loop=loop)
 
     async def connect(self, dest_host, dest_port, timeout=None, _socket=None):
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+
         self._dest_host = dest_host
         self._dest_port = dest_port
         self._timeout = timeout
 
+        try:
+            await self._connect(_socket=_socket)
+        except asyncio.TimeoutError as e:
+            raise ProxyTimeoutError(
+                'Proxy connection timed out: %s'
+                % self._timeout) from e
+
+        return self._stream.socket
+
+    async def _connect(self, _socket=None):
         async with async_timeout.timeout(self._timeout):
             try:
                 await self._stream.open_connection(
@@ -99,25 +114,21 @@ class BaseProxy(AsyncProxy):
                 msg = ('Can not connect to proxy %s:%s [%s]' %
                        (self._proxy_host, self._proxy_port, e.strerror))
                 raise ProxyConnectionError(e.errno, msg) from e
-            except asyncio.CancelledError as e:  # pragma: no cover
+            except Exception:  # pragma: no cover
                 await self._stream.close()
-                raise ProxyTimeoutError('Proxy connection timed out: %s'
-                                        % self._timeout) from e
+                raise
 
             try:
                 await self._negotiate()
-            except asyncio.CancelledError as e:  # pragma: no cover
+            except asyncio.CancelledError:  # pragma: no cover
                 # https://bugs.python.org/issue30064
                 # https://bugs.python.org/issue34795
                 if self._can_be_closed_safely():
                     await self._stream.close()
-                raise ProxyTimeoutError('Proxy connection timed out: %s'
-                                        % self._timeout) from e
+                raise
             except Exception:
                 await self._stream.close()
                 raise
-
-        return self._stream.socket
 
     def _can_be_closed_safely(self):  # pragma: no cover
         def is_proactor_event_loop():
