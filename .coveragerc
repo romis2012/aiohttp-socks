@@ -2,6 +2,7 @@
 omit =
 #    */_proxy_chain_*.py
     aiohttp_socks/core_socks/_basic_auth.py
+    aiohttp_socks/_deprecated.py
 [report]
 # Regexes for lines to exclude from consideration
 exclude_lines =
