@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import async_timeout
 
@@ -133,20 +134,21 @@ class BaseProxy(AsyncProxy):
     def _can_be_closed_safely(self):  # pragma: no cover
         def is_proactor_event_loop():
             try:
-                from asyncio import ProactorEventLoop
+                from asyncio import ProactorEventLoop  # noqa
             except ImportError:
                 return False
             return isinstance(self._loop, ProactorEventLoop)
 
         def is_uvloop_event_loop():
             try:
-                # noinspection PyPackageRequirements
-                from uvloop import Loop
+                from uvloop import Loop  # noqa
             except ImportError:
                 return False
             return isinstance(self._loop, Loop)
 
-        return is_proactor_event_loop() or is_uvloop_event_loop()
+        return (sys.version_info[:2] >= (3, 8)
+                or is_proactor_event_loop()
+                or is_uvloop_event_loop())
 
     async def _negotiate(self):
         proto = self._create_proto()
