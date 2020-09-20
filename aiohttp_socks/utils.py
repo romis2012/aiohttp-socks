@@ -1,7 +1,7 @@
 import asyncio
 
-from .core_socks import ProxyType, parse_proxy_url
-from .core_socks.async_.asyncio import Proxy
+from python_socks import ProxyType, parse_proxy_url
+from python_socks.async_.asyncio import Proxy
 
 
 async def open_connection(proxy_url=None, host=None, port=None, *,

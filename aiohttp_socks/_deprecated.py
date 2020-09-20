@@ -1,6 +1,6 @@
 import warnings
 
-from .core_socks import (
+from python_socks import (
     ProxyError,
     ProxyConnectionError,
     ProxyType

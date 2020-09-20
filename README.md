@@ -4,12 +4,15 @@
 [![Coverage Status](https://coveralls.io/repos/github/romis2012/aiohttp-socks/badge.svg?branch=master&_=x)](https://coveralls.io/github/romis2012/aiohttp-socks?branch=master)
 [![PyPI version](https://badge.fury.io/py/aiohttp-socks.svg)](https://badge.fury.io/py/aiohttp-socks)
 
-Proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). 
-SOCKS4(a), SOCKS5, HTTP (tunneling), Proxy chains are supported.
+The `aiohttp-socks` package provides a proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). 
+Supports SOCKS4(a), SOCKS5, HTTP (tunneling) as well as Proxy chains.
+It uses [python-socks](https://github.com/romis2012/python-socks) for core proxy functionality.
+
 
 ## Requirements
 - Python >= 3.6
 - aiohttp >= 2.3.2
+- python-socks[asyncio,trio] >= 1.0.1
 
 ## Installation
 ```

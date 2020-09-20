@@ -19,8 +19,8 @@ with codecs.open(os.path.join(os.path.abspath(os.path.dirname(
     except IndexError:
         raise RuntimeError('Unable to determine version.')
 
-if sys.version_info < (3, 5, 3):
-    raise RuntimeError("aiohttp_socks requires Python 3.5.3+")
+if sys.version_info < (3, 6, 0):
+    raise RuntimeError('aiohttp-socks requires Python 3.6+')
 
 with open('README.md') as f:
     long_description = f.read()
@@ -35,17 +35,11 @@ setup(
     description='Proxy connector for aiohttp',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    packages=[
-        'aiohttp_socks',
-        'aiohttp_socks.core_socks',
-        'aiohttp_socks.core_socks.sync',
-        'aiohttp_socks.core_socks.async_',
-        'aiohttp_socks.core_socks.async_.asyncio',
-        'aiohttp_socks.core_socks.async_.trio',
-    ],
+    packages=['aiohttp_socks'],
     keywords='asyncio aiohttp socks socks5 socks4 http proxy',
     install_requires=[
         'aiohttp>=2.3.2',
         'attrs>=19.2.0',
+        'python-socks[asyncio]>=1.0.1',
     ],
 )
