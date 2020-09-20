@@ -12,7 +12,7 @@ It uses [python-socks](https://github.com/romis2012/python-socks) for core proxy
 ## Requirements
 - Python >= 3.6
 - aiohttp >= 2.3.2
-- python-socks[asyncio,trio] >= 1.0.1
+- python-socks[asyncio] >= 1.0.1
 
 ## Installation
 ```
