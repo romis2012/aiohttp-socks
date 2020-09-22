@@ -33,7 +33,6 @@ async def open_connection(proxy_url=None, host=None, port=None, *,
 
     # noinspection PyTypeChecker
     return await asyncio.open_connection(
-        loop=loop,
         host=None,
         port=None,
         sock=sock,
