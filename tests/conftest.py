@@ -58,6 +58,11 @@ HTTP_PROXY_URL = 'http://{login}:{password}@{host}:{port}'.format(
 
 @pytest.fixture(scope='session', autouse=True)
 def proxy_server():
+    """
+    Open the proxy server
+
+    Args:
+    """
     system = platform.system().lower()
     config_path = resolve_path('./3proxy/cfg/3proxy.cfg')
     binary_path = resolve_path('./3proxy/bin/%s/3proxy' % system)

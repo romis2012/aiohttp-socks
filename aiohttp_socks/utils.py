@@ -9,6 +9,23 @@ async def open_connection(proxy_url=None, host=None, port=None, *,
                           proxy_host='127.0.0.1', proxy_port=1080,
                           username=None, password=None, rdns=True,
                           loop=None, **kwargs):
+      """
+      Establish a connection to a given proxy.
+
+      Args:
+          proxy_url: (str): write your description
+          host: (str): write your description
+          port: (int): write your description
+          proxy_type: (str): write your description
+          ProxyType: (str): write your description
+          SOCKS5: (str): write your description
+          proxy_host: (str): write your description
+          proxy_port: (int): write your description
+          username: (str): write your description
+          password: (str): write your description
+          rdns: (str): write your description
+          loop: (todo): write your description
+      """
     if host is None or port is None:
         raise ValueError('host and port must be specified')  # pragma: no cover
 
@@ -46,6 +63,24 @@ async def create_connection(proxy_url=None, protocol_factory=None,
                             proxy_host='127.0.0.1', proxy_port=1080,
                             username=None, password=None, rdns=True,
                             loop=None, **kwargs):
+      """
+      Create a new connection to a connection.
+
+      Args:
+          proxy_url: (str): write your description
+          protocol_factory: (str): write your description
+          host: (str): write your description
+          port: (int): write your description
+          proxy_type: (str): write your description
+          ProxyType: (str): write your description
+          SOCKS5: (str): write your description
+          proxy_host: (str): write your description
+          proxy_port: (int): write your description
+          username: (str): write your description
+          password: (str): write your description
+          rdns: (str): write your description
+          loop: (todo): write your description
+      """
     if protocol_factory is None:
         raise ValueError('protocol_factory '
                          'must be specified')  # pragma: no cover

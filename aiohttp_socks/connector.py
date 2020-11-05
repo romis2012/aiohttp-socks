@@ -12,12 +12,29 @@ from python_socks.async_.asyncio import Proxy
 
 class NoResolver(AbstractResolver):
     async def resolve(self, host, port=0, family=socket.AF_INET):
+          """
+          Resolve host
+
+          Args:
+              self: (todo): write your description
+              host: (str): write your description
+              port: (int): write your description
+              family: (str): write your description
+              socket: (todo): write your description
+              AF_INET: (int): write your description
+          """
         return [{'hostname': host,
                  'host': host, 'port': port,
                  'family': family, 'proto': 0,
                  'flags': 0}]
 
     async def close(self):
+          """
+          Closes the connection.
+
+          Args:
+              self: (todo): write your description
+          """
         pass  # pragma: no cover
 
 
@@ -26,6 +43,20 @@ class ProxyConnector(TCPConnector):
                  host=None, port=None,
                  username=None, password=None,
                  rdns=None, **kwargs):
+        """
+        Initialize the proxy
+
+        Args:
+            self: (todo): write your description
+            proxy_type: (str): write your description
+            ProxyType: (str): write your description
+            SOCKS5: (todo): write your description
+            host: (str): write your description
+            port: (int): write your description
+            username: (str): write your description
+            password: (str): write your description
+            rdns: (int): write your description
+        """
         kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
@@ -39,6 +70,15 @@ class ProxyConnector(TCPConnector):
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory,
                                       host, port, **kwargs):
+          """
+          Establish a connection to a redis server.
+
+          Args:
+              self: (todo): write your description
+              protocol_factory: (todo): write your description
+              host: (str): write your description
+              port: (int): write your description
+          """
         proxy = Proxy.create(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
@@ -67,6 +107,13 @@ class ProxyConnector(TCPConnector):
 
     @classmethod
     def from_url(cls, url, **kwargs):
+        """
+        Create a new http : class from a url.
+
+        Args:
+            cls: (todo): write your description
+            url: (str): write your description
+        """
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls(
             proxy_type=proxy_type,
@@ -90,6 +137,13 @@ class ProxyInfo:
 
 class ChainProxyConnector(TCPConnector):
     def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs):
+        """
+        Initialize the proxy
+
+        Args:
+            self: (todo): write your description
+            proxy_infos: (todo): write your description
+        """
         kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
@@ -98,6 +152,15 @@ class ChainProxyConnector(TCPConnector):
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory,
                                       host, port, **kwargs):
+          """
+          Establish a connection to the http connection.
+
+          Args:
+              self: (todo): write your description
+              protocol_factory: (todo): write your description
+              host: (str): write your description
+              port: (int): write your description
+          """
         proxies = []
         for info in self._proxy_infos:
             proxy = Proxy.create(
@@ -131,6 +194,13 @@ class ChainProxyConnector(TCPConnector):
 
     @classmethod
     def from_urls(cls, urls: Iterable[str], **kwargs):
+        """
+        Create a new proxy from a urllib.
+
+        Args:
+            cls: (todo): write your description
+            urls: (str): write your description
+        """
         infos = []
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)

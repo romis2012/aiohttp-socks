@@ -44,6 +44,13 @@ HTTP_URL_REDIRECT = 'http://httpbin.org/redirect/1'
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_proxy_ipv4(url, rdns):
+      """
+      Test if the socks proxy is connected
+
+      Args:
+          url: (str): write your description
+          rdns: (todo): write your description
+      """
     connector = ProxyConnector.from_url(SOCKS5_IPV4_URL, rdns=rdns)
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as resp:
@@ -52,6 +59,11 @@ async def test_socks5_proxy_ipv4(url, rdns):
 
 @pytest.mark.asyncio
 async def test_socks5_proxy_with_invalid_credentials():
+      """
+      Establish a socks session.
+
+      Args:
+      """
     connector = ProxyConnector(
         proxy_type=ProxyType.SOCKS5,
         host=SOCKS5_IPV4_HOST,
@@ -67,6 +79,11 @@ async def test_socks5_proxy_with_invalid_credentials():
 
 @pytest.mark.asyncio
 async def test_socks5_proxy_with_timeout():
+      """
+      Send a ssl5 proxy.
+
+      Args:
+      """
     connector = ProxyConnector(
         proxy_type=ProxyType.SOCKS5,
         host=SOCKS5_IPV4_HOST,
@@ -82,6 +99,11 @@ async def test_socks5_proxy_with_timeout():
 
 @pytest.mark.asyncio
 async def test_socks5_proxy_with_proxy_connect_timeout():
+      """
+      Test for http proxy.
+
+      Args:
+      """
     connector = ProxyConnector.from_url(SOCKS5_IPV4_URL)
     timeout = aiohttp.ClientTimeout(total=32, sock_connect=0.001)
     with pytest.raises(ProxyTimeoutError):
@@ -92,6 +114,12 @@ async def test_socks5_proxy_with_proxy_connect_timeout():
 
 @pytest.mark.asyncio
 async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port):
+      """
+      Test if the proxy proxy connection.
+
+      Args:
+          unused_tcp_port: (todo): write your description
+      """
     connector = ProxyConnector(
         proxy_type=ProxyType.SOCKS5,
         host=SOCKS5_IPV4_HOST,
@@ -108,6 +136,11 @@ async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port):
 @pytest.mark.skipif(SKIP_IPV6_TESTS, reason='TravisCI doesn`t support ipv6')
 @pytest.mark.asyncio
 async def test_socks5_proxy_ipv6():
+      """
+      Test to the socks.
+
+      Args:
+      """
     connector = ProxyConnector.from_url(SOCKS5_IPV6_URL)
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(HTTP_TEST_URL) as resp:
@@ -118,6 +151,13 @@ async def test_socks5_proxy_ipv6():
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks4_proxy(url, rdns):
+      """
+      Test if the socks.
+
+      Args:
+          url: (str): write your description
+          rdns: (todo): write your description
+      """
     connector = ProxyConnector.from_url(SOCKS4_URL, rdns=rdns, )
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as resp:
@@ -127,6 +167,12 @@ async def test_socks4_proxy(url, rdns):
 @pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
 @pytest.mark.asyncio
 async def test_http_proxy(url):
+      """
+      Test if the http proxy.
+
+      Args:
+          url: (str): write your description
+      """
     connector = ProxyConnector.from_url(HTTP_PROXY_URL)
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as resp:
@@ -136,6 +182,12 @@ async def test_http_proxy(url):
 @pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
 @pytest.mark.asyncio
 async def test_chain_proxy_from_url(url):
+      """
+      Test if the given proxy url.
+
+      Args:
+          url: (str): write your description
+      """
     connector = ChainProxyConnector.from_urls([
         SOCKS5_IPV4_URL,
         SOCKS4_URL,
@@ -150,6 +202,13 @@ async def test_chain_proxy_from_url(url):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_chain_proxy_ctor(url, rdns):
+      """
+      Test the proxy - chain.
+
+      Args:
+          url: (str): write your description
+          rdns: (todo): write your description
+      """
     connector = ChainProxyConnector([
         ProxyInfo(
             proxy_type=ProxyType.SOCKS5,
@@ -181,6 +240,12 @@ async def test_chain_proxy_ctor(url, rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_http_open_connection(rdns):
+      """
+      Synchronously sends connection to the smtp server.
+
+      Args:
+          rdns: (todo): write your description
+      """
     url = URL(HTTP_TEST_URL)
 
     reader, writer = await open_connection(
@@ -201,6 +266,12 @@ async def test_socks5_http_open_connection(rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_https_open_connection(rdns):
+      """
+      Sends an ssl5 connection.
+
+      Args:
+          rdns: (todo): write your description
+      """
     url = URL(HTTPS_TEST_URL)
 
     reader, writer = await open_connection(
@@ -223,6 +294,12 @@ async def test_socks5_https_open_connection(rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks4_http_open_connection(rdns):
+      """
+      Sends a http connection to the smtp server.
+
+      Args:
+          rdns: (todo): write your description
+      """
     url = URL(HTTP_TEST_URL)
 
     reader, writer = await open_connection(
@@ -242,6 +319,12 @@ async def test_socks4_http_open_connection(rdns):
 
 @pytest.mark.asyncio
 async def test_socks5_http_create_connection(event_loop):
+      """
+      Establish http connection.
+
+      Args:
+          event_loop: (todo): write your description
+      """
     url = URL(HTTP_TEST_URL)
 
     reader = asyncio.StreamReader(loop=event_loop)

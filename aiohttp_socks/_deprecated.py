@@ -15,6 +15,11 @@ class SocksVer(object):
 
 
 def _warn_about_connector():
+    """
+    Deprecated. use : func.
+
+    Args:
+    """
     warnings.warn('SocksConnector is deprecated. '
                   'Use ProxyConnector instead.', DeprecationWarning,
                   stacklevel=3)
@@ -22,6 +27,15 @@ def _warn_about_connector():
 
 class SocksConnector(ProxyConnector):
     def __init__(self, socks_ver=SocksVer.SOCKS5, **kwargs):
+        """
+        Initialize the proxy
+
+        Args:
+            self: (todo): write your description
+            socks_ver: (todo): write your description
+            SocksVer: (todo): write your description
+            SOCKS5: (todo): write your description
+        """
         _warn_about_connector()  # noqa
 
         if 'proxy_type' in kwargs:  # from_url
@@ -31,6 +45,13 @@ class SocksConnector(ProxyConnector):
 
     @classmethod
     def from_url(cls, url, **kwargs):
+        """
+        Create a connection from a url.
+
+        Args:
+            cls: (todo): write your description
+            url: (str): write your description
+        """
         _warn_about_connector()  # noqa
         return super().from_url(url, **kwargs)
 
