@@ -1,5 +1,4 @@
 import asyncio
-import ssl
 
 import aiohttp
 import pytest  # noqa
@@ -16,31 +15,15 @@ from aiohttp_socks import (
     open_connection,
     create_connection
 )
-
-from tests.conftest import (
-    SOCKS5_IPV4_HOST,
-    SOCKS5_IPV4_PORT,
-    LOGIN, PASSWORD,
-    SOCKS4_HOST,
-    SOCKS4_PORT,
-    HTTP_PROXY_HOST,
-    HTTP_PROXY_PORT,
-    SKIP_IPV6_TESTS,
-    SOCKS5_IPV4_URL,
-    SOCKS5_IPV6_URL,
-    SOCKS4_URL,
-    HTTP_PROXY_URL)
-
-# HTTP_TEST_URL = 'http://httpbin.org/ip'
-# HTTPS_TEST_URL = 'https://httpbin.org/ip'
-HTTP_TEST_URL = 'http://check-host.net/ip'
-HTTPS_TEST_URL = 'https://check-host.net/ip'
-
-HTTP_URL_DELAY_3_SEC = 'http://httpbin.org/delay/3'
-HTTP_URL_REDIRECT = 'http://httpbin.org/redirect/1'
+from tests.config import (
+    TEST_URL_IPV4,
+    SOCKS5_IPV4_URL, PROXY_HOST_IPV4, SOCKS5_PROXY_PORT, LOGIN,
+    PASSWORD, TEST_URL_IPV4_DELAY, SKIP_IPV6_TESTS, SOCKS5_IPV6_URL,
+    SOCKS4_URL, HTTP_PROXY_URL, SOCKS4_PROXY_PORT, HTTP_PROXY_PORT,
+)
 
 
-@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.parametrize('url', (TEST_URL_IPV4,))
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_proxy_ipv4(url, rdns):
@@ -54,14 +37,14 @@ async def test_socks5_proxy_ipv4(url, rdns):
 async def test_socks5_proxy_with_invalid_credentials():
     connector = ProxyConnector(
         proxy_type=ProxyType.SOCKS5,
-        host=SOCKS5_IPV4_HOST,
-        port=SOCKS5_IPV4_PORT,
+        host=PROXY_HOST_IPV4,
+        port=SOCKS5_PROXY_PORT,
         username=LOGIN,
         password=PASSWORD + 'aaa',
     )
     with pytest.raises(ProxyError):
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(HTTP_TEST_URL) as resp:
+            async with session.get(TEST_URL_IPV4) as resp:
                 await resp.text()
 
 
@@ -69,14 +52,14 @@ async def test_socks5_proxy_with_invalid_credentials():
 async def test_socks5_proxy_with_timeout():
     connector = ProxyConnector(
         proxy_type=ProxyType.SOCKS5,
-        host=SOCKS5_IPV4_HOST,
-        port=SOCKS5_IPV4_PORT,
+        host=PROXY_HOST_IPV4,
+        port=SOCKS5_PROXY_PORT,
         username=LOGIN,
         password=PASSWORD,
     )
     with pytest.raises(asyncio.TimeoutError):
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(HTTP_URL_DELAY_3_SEC, timeout=1) as resp:
+            async with session.get(TEST_URL_IPV4_DELAY, timeout=1) as resp:
                 await resp.text()
 
 
@@ -86,7 +69,7 @@ async def test_socks5_proxy_with_proxy_connect_timeout():
     timeout = aiohttp.ClientTimeout(total=32, sock_connect=0.001)
     with pytest.raises(ProxyTimeoutError):
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(HTTP_TEST_URL, timeout=timeout) as resp:
+            async with session.get(TEST_URL_IPV4, timeout=timeout) as resp:
                 await resp.text()
 
 
@@ -94,14 +77,14 @@ async def test_socks5_proxy_with_proxy_connect_timeout():
 async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port):
     connector = ProxyConnector(
         proxy_type=ProxyType.SOCKS5,
-        host=SOCKS5_IPV4_HOST,
+        host=PROXY_HOST_IPV4,
         port=unused_tcp_port,
         username=LOGIN,
         password=PASSWORD,
     )
     with pytest.raises(ProxyConnectionError):
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(HTTP_TEST_URL) as resp:
+            async with session.get(TEST_URL_IPV4) as resp:
                 await resp.text()
 
 
@@ -110,11 +93,11 @@ async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port):
 async def test_socks5_proxy_ipv6():
     connector = ProxyConnector.from_url(SOCKS5_IPV6_URL)
     async with aiohttp.ClientSession(connector=connector) as session:
-        async with session.get(HTTP_TEST_URL) as resp:
+        async with session.get(TEST_URL_IPV4) as resp:
             assert resp.status == 200
 
 
-@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.parametrize('url', (TEST_URL_IPV4,))
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks4_proxy(url, rdns):
@@ -124,7 +107,7 @@ async def test_socks4_proxy(url, rdns):
             assert resp.status == 200
 
 
-@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.parametrize('url', (TEST_URL_IPV4,))
 @pytest.mark.asyncio
 async def test_http_proxy(url):
     connector = ProxyConnector.from_url(HTTP_PROXY_URL)
@@ -133,7 +116,7 @@ async def test_http_proxy(url):
             assert resp.status == 200
 
 
-@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.parametrize('url', (TEST_URL_IPV4,))
 @pytest.mark.asyncio
 async def test_chain_proxy_from_url(url):
     connector = ChainProxyConnector.from_urls([
@@ -146,28 +129,29 @@ async def test_chain_proxy_from_url(url):
             assert resp.status == 200
 
 
-@pytest.mark.parametrize('url', (HTTP_TEST_URL, HTTPS_TEST_URL))
+@pytest.mark.parametrize('url', (TEST_URL_IPV4,))
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_chain_proxy_ctor(url, rdns):
     connector = ChainProxyConnector([
         ProxyInfo(
             proxy_type=ProxyType.SOCKS5,
-            host=SOCKS5_IPV4_HOST,
-            port=SOCKS5_IPV4_PORT,
+            host=PROXY_HOST_IPV4,
+            port=SOCKS5_PROXY_PORT,
             username=LOGIN,
             password=PASSWORD,
             rdns=rdns
         ),
         ProxyInfo(
             proxy_type=ProxyType.SOCKS4,
-            host=SOCKS4_HOST,
-            port=SOCKS4_PORT,
+            host=PROXY_HOST_IPV4,
+            port=SOCKS4_PROXY_PORT,
+            username=LOGIN,
             rdns=rdns
         ),
         ProxyInfo(
             proxy_type=ProxyType.HTTP,
-            host=HTTP_PROXY_HOST,
+            host=PROXY_HOST_IPV4,
             port=HTTP_PROXY_PORT,
             username=LOGIN,
             password=PASSWORD
@@ -181,7 +165,7 @@ async def test_chain_proxy_ctor(url, rdns):
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks5_http_open_connection(rdns):
-    url = URL(HTTP_TEST_URL)
+    url = URL(TEST_URL_IPV4)
 
     reader, writer = await open_connection(
         proxy_url=SOCKS5_IPV4_URL,
@@ -198,32 +182,32 @@ async def test_socks5_http_open_connection(rdns):
     assert b'200 OK' in response
 
 
-@pytest.mark.parametrize('rdns', (True, False))
-@pytest.mark.asyncio
-async def test_socks5_https_open_connection(rdns):
-    url = URL(HTTPS_TEST_URL)
-
-    reader, writer = await open_connection(
-        proxy_url=SOCKS5_IPV4_URL,
-        host=url.host,
-        port=url.port,
-        ssl=ssl.create_default_context(),
-        server_hostname=url.host,
-        rdns=rdns,
-    )
-    request = ("GET %s HTTP/1.1\r\n"
-               "Host: %s\r\n"
-               "Connection: close\r\n\r\n" % (url.path_qs, url.host))
-
-    writer.write(request.encode())
-    response = await reader.read(-1)
-    assert b'200 OK' in response
+# @pytest.mark.parametrize('rdns', (True, False))
+# @pytest.mark.asyncio
+# async def test_socks5_https_open_connection(rdns):
+#     url = URL(TEST_URL_IPV4)
+#
+#     reader, writer = await open_connection(
+#         proxy_url=SOCKS5_IPV4_URL,
+#         host=url.host,
+#         port=url.port,
+#         ssl=ssl.create_default_context(),
+#         server_hostname=url.host,
+#         rdns=rdns,
+#     )
+#     request = ("GET %s HTTP/1.1\r\n"
+#                "Host: %s\r\n"
+#                "Connection: close\r\n\r\n" % (url.path_qs, url.host))
+#
+#     writer.write(request.encode())
+#     response = await reader.read(-1)
+#     assert b'200 OK' in response
 
 
 @pytest.mark.parametrize('rdns', (True, False))
 @pytest.mark.asyncio
 async def test_socks4_http_open_connection(rdns):
-    url = URL(HTTP_TEST_URL)
+    url = URL(TEST_URL_IPV4)
 
     reader, writer = await open_connection(
         proxy_url=SOCKS4_URL,
@@ -242,7 +226,7 @@ async def test_socks4_http_open_connection(rdns):
 
 @pytest.mark.asyncio
 async def test_socks5_http_create_connection(event_loop):
-    url = URL(HTTP_TEST_URL)
+    url = URL(TEST_URL_IPV4)
 
     reader = asyncio.StreamReader(loop=event_loop)
     protocol = asyncio.StreamReaderProtocol(reader, loop=event_loop)

@@ -9,3 +9,4 @@ pytest-cov>=2.6.0
 coveralls>=1.5.1
 attrs>=19.3.0
 yarl>=1.4.2
+flask>=1.1.2
