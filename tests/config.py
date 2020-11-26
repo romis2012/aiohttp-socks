@@ -68,6 +68,8 @@ TEST_HOST_NAME_IPV6 = 'ip6.target.example.com'
 TEST_PORT_IPV4 = 8889
 TEST_PORT_IPV6 = 8889
 
+TEST_PORT_IPV4_HTTPS = 8890
+
 TEST_URL_IPV4 = 'http://{host}:{port}/ip'.format(
     host=TEST_HOST_NAME_IPV4,
     port=TEST_PORT_IPV4
@@ -82,3 +84,18 @@ TEST_URL_IPV4_DELAY = 'http://{host}:{port}/delay/2'.format(
     host=TEST_HOST_NAME_IPV4,
     port=TEST_PORT_IPV4
 )
+
+TEST_URL_IPV4_HTTPS = 'https://{host}:{port}/ip'.format(
+    host=TEST_HOST_NAME_IPV4,
+    port=TEST_PORT_IPV4_HTTPS
+)
+
+
+def resolve_path(path):
+    return os.path.normpath(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), path))
+
+
+TEST_HOST_CERT_FILE = resolve_path('./cert/test_host.crt')
+TEST_HOST_KEY_FILE = resolve_path('./cert/test_host.key')
+TEST_HOST_PEM_FILE = resolve_path('./cert/test_host.pem')

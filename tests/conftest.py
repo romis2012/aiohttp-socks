@@ -10,7 +10,8 @@ from tests.config import (
     HTTP_PROXY_PORT,
     SOCKS4_PORT_NO_AUTH, SOCKS4_PROXY_PORT,
     SOCKS5_PROXY_PORT_NO_AUTH, TEST_PORT_IPV4, TEST_PORT_IPV6, TEST_HOST_IPV4,
-    TEST_HOST_IPV6,
+    TEST_HOST_IPV6, TEST_PORT_IPV4_HTTPS, TEST_HOST_CERT_FILE,
+    TEST_HOST_KEY_FILE,
 )
 from tests.http_server import HttpServer, HttpServerConfig
 from tests.mocks import async_resolve_factory
@@ -94,6 +95,12 @@ def web_server():
         HttpServerConfig(
             host=TEST_HOST_IPV4,
             port=TEST_PORT_IPV4
+        ),
+        HttpServerConfig(
+            host=TEST_HOST_IPV4,
+            port=TEST_PORT_IPV4_HTTPS,
+            certfile=TEST_HOST_CERT_FILE,
+            keyfile=TEST_HOST_KEY_FILE,
         )
     ]
 

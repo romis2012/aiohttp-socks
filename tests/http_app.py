@@ -1,3 +1,4 @@
+import ssl
 import time
 
 import flask  # noqa
@@ -17,7 +18,13 @@ def delay(seconds):
     return 'ok'
 
 
-def run_app(host, port, ssl_context=None):
+def run_app(host: str, port: int, certfile: str = None, keyfile: str = None):
+    if certfile and keyfile:
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        ssl_context.load_cert_chain(certfile, keyfile)
+    else:
+        ssl_context = None
+
     print('Starting http server on {}:{}...'.format(host, port))
     app.run(debug=False, host=host, port=port, threaded=True,
             ssl_context=ssl_context)
