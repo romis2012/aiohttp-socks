@@ -6,8 +6,8 @@ from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
 
 from python_socks import ProxyType, parse_proxy_url
-from python_socks.async_ import ProxyChain
-from python_socks.async_.asyncio import Proxy
+from python_socks.async_.asyncio.ext import Proxy
+from python_socks.async_.asyncio.ext import ProxyChain
 
 
 class NoResolver(AbstractResolver):
@@ -38,7 +38,7 @@ class ProxyConnector(TCPConnector):
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory,
-                                      host, port, **kwargs):
+                                      host, port, *, ssl, **kwargs):
         proxy = Proxy.create(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
@@ -55,15 +55,20 @@ class ProxyConnector(TCPConnector):
         if timeout is not None:
             connect_timeout = getattr(timeout, 'sock_connect', None)
 
-        sock = await proxy.connect(host, port, timeout=connect_timeout)
-
-        return await super()._wrap_create_connection(
-            protocol_factory,
-            None,
-            None,
-            sock=sock,
-            **kwargs
+        stream = await proxy.connect(
+            dest_host=host,
+            dest_port=port,
+            dest_ssl=ssl,
+            timeout=connect_timeout
         )
+
+        transport = stream.writer.transport
+        protocol = protocol_factory()
+
+        transport.set_protocol(protocol)
+        protocol.transport = transport
+
+        return transport, protocol
 
     @classmethod
     def from_url(cls, url, **kwargs):
@@ -97,7 +102,7 @@ class ChainProxyConnector(TCPConnector):
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory,
-                                      host, port, **kwargs):
+                                      host, port, *, ssl, **kwargs):
         proxies = []
         for info in self._proxy_infos:
             proxy = Proxy.create(
@@ -119,15 +124,20 @@ class ChainProxyConnector(TCPConnector):
         if timeout is not None:
             connect_timeout = getattr(timeout, 'sock_connect', None)
 
-        sock = await proxy.connect(host, port, timeout=connect_timeout)
-
-        return await super()._wrap_create_connection(
-            protocol_factory,
-            None,
-            None,
-            sock=sock,
-            **kwargs
+        stream = await proxy.connect(
+            dest_host=host,
+            dest_port=port,
+            dest_ssl=ssl,
+            timeout=connect_timeout
         )
+
+        transport = stream.writer.transport
+        protocol = protocol_factory()
+
+        transport.set_protocol(protocol)
+        protocol.transport = transport
+
+        return transport, protocol
 
     @classmethod
     def from_urls(cls, urls: Iterable[str], **kwargs):

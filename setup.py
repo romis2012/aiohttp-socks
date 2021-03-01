@@ -40,6 +40,6 @@ setup(
     install_requires=[
         'aiohttp>=2.3.2',
         'attrs>=19.2.0',
-        'python-socks[asyncio]>=1.0.1',
+        'python-socks[asyncio]>=1.2.2',
     ],
 )
