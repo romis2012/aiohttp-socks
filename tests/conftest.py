@@ -3,7 +3,7 @@ from unittest import mock
 import pytest  # noqa
 
 # noinspection PyProtectedMember
-from python_socks._resolver_async_aio import Resolver as AsyncioResolver
+from python_socks.async_.asyncio._resolver import Resolver as AsyncioResolver
 from tests.config import (
     PROXY_HOST_IPV4, PROXY_HOST_IPV6,
     SOCKS5_PROXY_PORT, LOGIN, PASSWORD, SKIP_IPV6_TESTS,

@@ -6,8 +6,8 @@ from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
 
 from python_socks import ProxyType, parse_proxy_url
-from python_socks.async_.asyncio.ext import Proxy
-from python_socks.async_.asyncio.ext import ProxyChain
+from python_socks.async_.asyncio.v2 import Proxy
+from python_socks.async_.asyncio.v2 import ProxyChain
 
 
 class NoResolver(AbstractResolver):
