@@ -7,7 +7,7 @@
 [![Downloads](https://pepy.tech/badge/aiohttp-socks/month)](https://pepy.tech/project/aiohttp-socks)
 -->
 The `aiohttp-socks` package provides a proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). 
-Supports SOCKS4(a), SOCKS5, HTTP (tunneling) as well as Proxy chains.
+Supports SOCKS4(a), SOCKS5(h), HTTP (tunneling) as well as Proxy chains.
 It uses [python-socks](https://github.com/romis2012/python-socks) for core proxy functionality.
 
 
