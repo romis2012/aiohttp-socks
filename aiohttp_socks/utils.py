@@ -7,6 +7,7 @@ from python_socks.async_.asyncio import Proxy
 async def open_connection(proxy_url=None, host=None, port=None, *,
                           proxy_type=ProxyType.SOCKS5,
                           proxy_host='127.0.0.1', proxy_port=1080,
+                          proxy_timeout=None,
                           username=None, password=None, rdns=True,
                           loop=None, **kwargs):
     if host is None or port is None:
@@ -29,7 +30,7 @@ async def open_connection(proxy_url=None, host=None, port=None, *,
         loop=loop
     )
 
-    sock = await proxy.connect(host, port)
+    sock = await proxy.connect(host, port, proxy_timeout)
 
     # noinspection PyTypeChecker
     return await asyncio.open_connection(
@@ -44,6 +45,7 @@ async def create_connection(proxy_url=None, protocol_factory=None,
                             host=None, port=None, *,
                             proxy_type=ProxyType.SOCKS5,
                             proxy_host='127.0.0.1', proxy_port=1080,
+                            proxy_timeout=None,
                             username=None, password=None, rdns=True,
                             loop=None, **kwargs):
     if protocol_factory is None:
@@ -71,7 +73,7 @@ async def create_connection(proxy_url=None, protocol_factory=None,
         loop=loop
     )
 
-    sock = await proxy.connect(host, port)
+    sock = await proxy.connect(host, port, proxy_timeout)
 
     return await loop.create_connection(
         protocol_factory=protocol_factory,
