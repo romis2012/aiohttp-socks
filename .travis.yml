@@ -19,6 +19,7 @@ install:
   - pip install -e .
 
 script:
+  - pip install importlib_metadata -U
   - flake8 aiohttp_socks tests
   - pytest --cov=./aiohttp_socks tests/ -s
 #  - pytest --cov=./aiohttp_socks tests/ --cov-report term-missing -s
