@@ -27,8 +27,9 @@ from tests.config import (
 
 
 def create_ssl_context():
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.check_hostname = False
     ssl_context.load_verify_locations(TEST_HOST_PEM_FILE)
     return ssl_context
 
