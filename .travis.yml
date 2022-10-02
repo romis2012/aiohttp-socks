@@ -15,11 +15,11 @@ env:
 #  - chmod +x $TRAVIS_BUILD_DIR/tests/3proxy/bin/linux/3proxy
 
 install:
+  - pip install importlib_metadata -U
   - pip install -r requirements-dev.txt
   - pip install -e .
 
 script:
-  - pip install importlib_metadata -U
   - flake8 aiohttp_socks tests
   - pytest --cov=./aiohttp_socks tests/ -s
 #  - pytest --cov=./aiohttp_socks tests/ --cov-report term-missing -s
