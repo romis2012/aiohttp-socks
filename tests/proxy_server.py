@@ -1,24 +1,22 @@
-import logging
-import sys
-import time
+import ssl
 import typing
 from multiprocessing import Process
 from unittest import mock
 
-from tests.mocks import sync_resolve_factory
-from tests.tiny_proxy import (
-    HttpProxyServer,
-    Socks4ProxyServer,
-    Socks5ProxyServer
-)
-from tests.tiny_proxy.handlers import (
-    Socks4ProxyHandler,
-    Socks5ProxyHandler,
+import anyio
+from anyio import create_tcp_listener
+from anyio.streams.tls import TLSListener
+from tiny_proxy import (
     HttpProxyHandler,
+    Socks5ProxyHandler,
+    Socks4ProxyHandler,
+    HttpProxy,
+    Socks4Proxy,
+    Socks5Proxy,
+    AbstractProxy,
 )
-from tests.tiny_proxy.handlers.base_proxy import BaseProxyHandler
-from tests.tiny_proxy.handlers.resolver import Resolver
-from tests.utils import is_connectable
+
+from tests.mocks import getaddrinfo_async_mock
 
 
 class ProxyConfig(typing.NamedTuple):
@@ -27,6 +25,8 @@ class ProxyConfig(typing.NamedTuple):
     port: int
     username: typing.Optional[str] = None
     password: typing.Optional[str] = None
+    ssl_certfile: typing.Optional[str] = None
+    ssl_keyfile: typing.Optional[str] = None
 
     def to_dict(self):
         d = {}
@@ -37,55 +37,72 @@ class ProxyConfig(typing.NamedTuple):
 
 
 cls_map = {
-    'http': HttpProxyServer,
-    'socks4': Socks4ProxyServer,
-    'socks5': Socks5ProxyServer,
+    'http': HttpProxyHandler,
+    'socks4': Socks4ProxyHandler,
+    'socks5': Socks5ProxyHandler,
 }
 
 
-def configure_logging():
-    root_logger = logging.getLogger()
-    root_logger.setLevel('DEBUG')
-
-    fmt = '%(asctime)s [%(name)s] %(levelname)s : %(message)s'
-    formatter = logging.Formatter(fmt)
-    formatter.converter = time.gmtime
-
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(formatter)
-    root_logger.addHandler(stdout_handler)
-
-
-def connect_to_remote_factory(cls: typing.Type[BaseProxyHandler]):
+def connect_to_remote_factory(cls: typing.Type[AbstractProxy]):
     """
     simulate target host connection timeout
     """
     origin_connect_to_remote = cls.connect_to_remote
 
-    def new_connect_to_remote(self):
-        time.sleep(0.01)
-        return origin_connect_to_remote(self)
+    async def new_connect_to_remote(self):
+        await anyio.sleep(0.01)
+        return await origin_connect_to_remote(self)
 
     return new_connect_to_remote
 
 
-@mock.patch.object(HttpProxyHandler, attribute='connect_to_remote',
-                   new=connect_to_remote_factory(HttpProxyHandler))
-@mock.patch.object(Socks4ProxyHandler, attribute='connect_to_remote',
-                   new=connect_to_remote_factory(Socks4ProxyHandler))
-@mock.patch.object(Socks5ProxyHandler, attribute='connect_to_remote',
-                   new=connect_to_remote_factory(Socks5ProxyHandler))
-@mock.patch.object(Resolver, attribute='resolve',
-                   new=sync_resolve_factory(Resolver))
-def start(proxy_type, host, port, **kwargs):
-    # configure_logging()
+@mock.patch.object(
+    HttpProxy,
+    attribute='connect_to_remote',
+    new=connect_to_remote_factory(HttpProxy),
+)
+@mock.patch.object(
+    Socks4Proxy,
+    attribute='connect_to_remote',
+    new=connect_to_remote_factory(Socks4Proxy),
+)
+@mock.patch.object(
+    Socks5Proxy,
+    attribute='connect_to_remote',
+    new=connect_to_remote_factory(Socks5Proxy),
+)
+@mock.patch('anyio._core._sockets.getaddrinfo', new=getaddrinfo_async_mock(anyio.getaddrinfo))
+def start(
+    proxy_type,
+    host,
+    port,
+    ssl_certfile=None,
+    ssl_keyfile=None,
+    **kwargs,
+):
+    handler_cls = cls_map.get(proxy_type)
+    if not handler_cls:
+        raise RuntimeError(f'Unsupported type: {proxy_type}')
 
-    cls = cls_map.get(proxy_type)
-    if not cls:
-        raise RuntimeError('Unsupported type: {}'.format(proxy_type))
+    if ssl_certfile and ssl_keyfile:
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(ssl_certfile, ssl_keyfile)
+    else:
+        ssl_context = None
 
-    with cls(host, port, **kwargs) as server:
-        server.serve_forever()
+    print(f'Starting {proxy_type} proxy on {host}:{port}...')
+
+    handler = handler_cls(**kwargs)
+
+    async def serve():
+        listener = await create_tcp_listener(local_host=host, local_port=port)
+        if ssl_context is not None:
+            listener = TLSListener(listener=listener, ssl_context=ssl_context)
+
+        async with listener:
+            await listener.serve(handler.handle)
+
+    anyio.run(serve)
 
 
 class ProxyServer:
@@ -96,11 +113,18 @@ class ProxyServer:
         self.workers = []
 
     def start(self):
-        for proxy in self.config:
-            print('Starting {} proxy on {}:{}...'.format(
-                proxy.proxy_type, proxy.host, proxy.port))
+        for cfg in self.config:
+            print(
+                'Starting {} proxy on {}:{}; certfile={}, keyfile={}...'.format(
+                    cfg.proxy_type,
+                    cfg.host,
+                    cfg.port,
+                    cfg.ssl_certfile,
+                    cfg.ssl_keyfile,
+                )
+            )
 
-            p = Process(target=start, kwargs=proxy.to_dict())
+            p = Process(target=start, kwargs=cfg.to_dict(), daemon=True)
             self.workers.append(p)
 
         for p in self.workers:
@@ -109,16 +133,3 @@ class ProxyServer:
     def terminate(self):
         for p in self.workers:
             p.terminate()
-
-    def wait_until_connectable(self, host, port, timeout=10):
-        count = 0
-        while not is_connectable(host=host, port=port):
-            if count >= timeout:
-                self.terminate()
-                raise Exception(
-                    'The proxy server has not available '
-                    'by (%s, %s) in %d seconds'
-                    % (host, port, timeout))
-            count += 1
-            time.sleep(1)
-        return True

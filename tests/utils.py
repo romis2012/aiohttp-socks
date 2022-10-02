@@ -1,14 +1,24 @@
 import socket
+import time
 
 
 def is_connectable(host, port):
-    sock = None
     try:
         sock = socket.create_connection((host, port), 1)
-        result = True
     except socket.error:
-        result = False
-    finally:
-        if sock:
-            sock.close()
-    return result
+        return False
+    else:
+        sock.close()
+        return True
+
+
+def wait_until_connectable(host, port, timeout=10):
+    count = 0
+    while not is_connectable(host=host, port=port):
+        if count >= timeout:
+            raise Exception(
+                f'The proxy server has not available by ({host}, {port}) in {timeout:d} seconds'
+            )
+        count += 1
+        time.sleep(1)
+    return True

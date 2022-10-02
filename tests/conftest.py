@@ -16,6 +16,7 @@ from tests.config import (
 from tests.http_server import HttpServer, HttpServerConfig
 from tests.mocks import async_resolve_factory
 from tests.proxy_server import ProxyConfig, ProxyServer
+from tests.utils import wait_until_connectable
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -82,7 +83,7 @@ def proxy_server():
     server = ProxyServer(config=config)
     server.start()
     for cfg in config:
-        server.wait_until_connectable(host=cfg.host, port=cfg.port)
+        wait_until_connectable(host=cfg.host, port=cfg.port, timeout=10)
 
     yield None
 
