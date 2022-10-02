@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 sudo: false
 language: python
 
@@ -15,7 +15,7 @@ env:
 #  - chmod +x $TRAVIS_BUILD_DIR/tests/3proxy/bin/linux/3proxy
 
 install:
-  - pip install importlib_metadata -U
+#  - pip install importlib_metadata -U
   - pip install -r requirements-dev.txt
   - pip install -e .
 
