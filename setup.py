@@ -11,11 +11,13 @@ except ImportError:
 
 version = None
 
-with codecs.open(os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'aiohttp_socks', '__init__.py'), 'r', 'latin1') as fp:
+with codecs.open(
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'aiohttp_socks', '__init__.py'),
+    'r',
+    'latin1',
+) as fp:
     try:
-        version = re.findall(r"^__version__ = '([^']+)'\r?$",
-                             fp.read(), re.M)[0]
+        version = re.findall(r"^__version__ = '([^']+)'\r?$", fp.read(), re.M)[0]
     except IndexError:
         raise RuntimeError('Unable to determine version.')
 
@@ -39,7 +41,6 @@ setup(
     keywords='asyncio aiohttp socks socks5 socks4 http proxy',
     install_requires=[
         'aiohttp>=2.3.2',
-        'attrs>=19.2.0',
         'python-socks[asyncio]>=2.0.0,<3.0.0',
     ],
 )

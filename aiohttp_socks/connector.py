@@ -1,10 +1,9 @@
 import socket
+import typing
 from typing import Iterable
 
-import attr
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
-
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
 from python_socks.async_.asyncio.v2 import ProxyChain
@@ -12,20 +11,32 @@ from python_socks.async_.asyncio.v2 import ProxyChain
 
 class NoResolver(AbstractResolver):
     async def resolve(self, host, port=0, family=socket.AF_INET):
-        return [{'hostname': host,
-                 'host': host, 'port': port,
-                 'family': family, 'proto': 0,
-                 'flags': 0}]
+        return [
+            {
+                'hostname': host,
+                'host': host,
+                'port': port,
+                'family': family,
+                'proto': 0,
+                'flags': 0,
+            }
+        ]
 
     async def close(self):
         pass  # pragma: no cover
 
 
 class ProxyConnector(TCPConnector):
-    def __init__(self, proxy_type=ProxyType.SOCKS5,
-                 host=None, port=None,
-                 username=None, password=None,
-                 rdns=None, **kwargs):
+    def __init__(
+        self,
+        proxy_type=ProxyType.SOCKS5,
+        host=None,
+        port=None,
+        username=None,
+        password=None,
+        rdns=None,
+        **kwargs,
+    ):
         kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
@@ -37,8 +48,7 @@ class ProxyConnector(TCPConnector):
         self._rdns = rdns
 
     # noinspection PyMethodOverriding
-    async def _wrap_create_connection(self, protocol_factory,
-                                      host, port, *, ssl, **kwargs):
+    async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
         proxy = Proxy.create(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
@@ -56,10 +66,7 @@ class ProxyConnector(TCPConnector):
             connect_timeout = getattr(timeout, 'sock_connect', None)
 
         stream = await proxy.connect(
-            dest_host=host,
-            dest_port=port,
-            dest_ssl=ssl,
-            timeout=connect_timeout
+            dest_host=host, dest_port=port, dest_ssl=ssl, timeout=connect_timeout
         )
 
         transport = stream.writer.transport
@@ -79,18 +86,17 @@ class ProxyConnector(TCPConnector):
             port=port,
             username=username,
             password=password,
-            **kwargs
+            **kwargs,
         )
 
 
-@attr.s(frozen=True, slots=True)
-class ProxyInfo:
-    proxy_type = attr.ib(type=ProxyType)
-    host = attr.ib(type=str)
-    port = attr.ib(type=int)
-    username = attr.ib(type=str, default=None)
-    password = attr.ib(type=str, default=None)
-    rdns = attr.ib(type=bool, default=None)
+class ProxyInfo(typing.NamedTuple):
+    proxy_type: ProxyType
+    host: str
+    port: int
+    username: typing.Optional[str] = None
+    password: typing.Optional[str] = None
+    rdns: typing.Optional[bool] = None
 
 
 class ChainProxyConnector(TCPConnector):
@@ -101,8 +107,7 @@ class ChainProxyConnector(TCPConnector):
         self._proxy_infos = proxy_infos
 
     # noinspection PyMethodOverriding
-    async def _wrap_create_connection(self, protocol_factory,
-                                      host, port, *, ssl, **kwargs):
+    async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
         proxies = []
         for info in self._proxy_infos:
             proxy = Proxy.create(
@@ -112,7 +117,7 @@ class ChainProxyConnector(TCPConnector):
                 username=info.username,
                 password=info.password,
                 rdns=info.rdns,
-                loop=self._loop
+                loop=self._loop,
             )
             proxies.append(proxy)
 
@@ -125,10 +130,7 @@ class ChainProxyConnector(TCPConnector):
             connect_timeout = getattr(timeout, 'sock_connect', None)
 
         stream = await proxy.connect(
-            dest_host=host,
-            dest_port=port,
-            dest_ssl=ssl,
-            timeout=connect_timeout
+            dest_host=host, dest_port=port, dest_ssl=ssl, timeout=connect_timeout
         )
 
         transport = stream.writer.transport
@@ -145,11 +147,7 @@ class ChainProxyConnector(TCPConnector):
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)
             proxy_info = ProxyInfo(
-                proxy_type=proxy_type,
-                host=host,
-                port=port,
-                username=username,
-                password=password
+                proxy_type=proxy_type, host=host, port=port, username=username, password=password
             )
             infos.append(proxy_info)
 
