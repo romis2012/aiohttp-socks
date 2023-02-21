@@ -1,9 +1,11 @@
 import socket
 import typing
 from typing import Iterable
+from asyncio import BaseTransport
 
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
+from aiohttp.client_proto import ResponseHandler
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
 from python_socks.async_.asyncio.v2 import ProxyChain
@@ -35,6 +37,7 @@ class ProxyConnector(TCPConnector):
         username=None,
         password=None,
         rdns=None,
+        proxy_ssl=None,
         **kwargs,
     ):
         kwargs['resolver'] = NoResolver()
@@ -46,6 +49,7 @@ class ProxyConnector(TCPConnector):
         self._proxy_username = username
         self._proxy_password = password
         self._rdns = rdns
+        self._proxy_ssl = proxy_ssl
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
@@ -56,7 +60,7 @@ class ProxyConnector(TCPConnector):
             username=self._proxy_username,
             password=self._proxy_password,
             rdns=self._rdns,
-            loop=self._loop,
+            proxy_ssl=self._proxy_ssl,
         )
 
         connect_timeout = None
@@ -66,14 +70,17 @@ class ProxyConnector(TCPConnector):
             connect_timeout = getattr(timeout, 'sock_connect', None)
 
         stream = await proxy.connect(
-            dest_host=host, dest_port=port, dest_ssl=ssl, timeout=connect_timeout
+            dest_host=host,
+            dest_port=port,
+            dest_ssl=ssl,
+            timeout=connect_timeout,
         )
 
-        transport = stream.writer.transport
-        protocol = protocol_factory()
+        transport: BaseTransport = stream.writer.transport
+        protocol: ResponseHandler = protocol_factory()
 
         transport.set_protocol(protocol)
-        protocol.transport = transport
+        protocol.connection_made(transport)
 
         return transport, protocol
 
@@ -117,7 +124,6 @@ class ChainProxyConnector(TCPConnector):
                 username=info.username,
                 password=info.password,
                 rdns=info.rdns,
-                loop=self._loop,
             )
             proxies.append(proxy)
 
@@ -130,14 +136,17 @@ class ChainProxyConnector(TCPConnector):
             connect_timeout = getattr(timeout, 'sock_connect', None)
 
         stream = await proxy.connect(
-            dest_host=host, dest_port=port, dest_ssl=ssl, timeout=connect_timeout
+            dest_host=host,
+            dest_port=port,
+            dest_ssl=ssl,
+            timeout=connect_timeout,
         )
 
-        transport = stream.writer.transport
-        protocol = protocol_factory()
+        transport: BaseTransport = stream.writer.transport
+        protocol: ResponseHandler = protocol_factory()
 
         transport.set_protocol(protocol)
-        protocol.transport = transport
+        protocol.connection_made(transport)
 
         return transport, protocol
 
@@ -147,7 +156,11 @@ class ChainProxyConnector(TCPConnector):
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)
             proxy_info = ProxyInfo(
-                proxy_type=proxy_type, host=host, port=port, username=username, password=password
+                proxy_type=proxy_type,
+                host=host,
+                port=port,
+                username=username,
+                password=password,
             )
             infos.append(proxy_info)
 
