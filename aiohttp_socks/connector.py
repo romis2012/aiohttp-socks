@@ -51,6 +51,8 @@ class ProxyConnector(TCPConnector):
         self._rdns = rdns
         self._proxy_ssl = proxy_ssl
 
+        self._streams = []
+
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
         proxy = Proxy.create(
@@ -75,6 +77,14 @@ class ProxyConnector(TCPConnector):
             dest_ssl=ssl,
             timeout=connect_timeout,
         )
+
+        # Fix issue https://github.com/romis2012/aiohttp-socks/issues/27
+        # On Python 3.11.5
+        # We need to keep references to the stream.reader/stream.writer so that they
+        # are not garbage collected and closed while we're still using them.
+        # See StreamWriter.__del__ method (was added in Python 3.11.5)
+        self._streams.append(stream)
+        #
 
         transport: BaseTransport = stream.writer.transport
         protocol: ResponseHandler = protocol_factory()
