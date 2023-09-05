@@ -1,7 +1,7 @@
 import socket
 import typing
 from typing import Iterable
-from asyncio import BaseTransport
+from asyncio import BaseTransport, StreamWriter
 
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
@@ -51,7 +51,8 @@ class ProxyConnector(TCPConnector):
         self._rdns = rdns
         self._proxy_ssl = proxy_ssl
 
-        self._streams = []
+        # self._streams = []
+        self._writer_del = getattr(StreamWriter, '__del__', None)
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
@@ -83,8 +84,13 @@ class ProxyConnector(TCPConnector):
         # We need to keep references to the stream.reader/stream.writer so that they
         # are not garbage collected and closed while we're still using them.
         # See StreamWriter.__del__ method (was added in Python 3.11.5)
-        self._streams.append(stream)
+        # self._streams.append(stream)
         #
+
+        # Since the solution above leads to potential memory leaks,
+        # we just remove the StreamWriter's __del__ attribute
+        if hasattr(stream.writer.__class__, '__del__'):
+            delattr(stream.writer.__class__, '__del__')
 
         transport: BaseTransport = stream.writer.transport
         protocol: ResponseHandler = protocol_factory()
@@ -93,6 +99,12 @@ class ProxyConnector(TCPConnector):
         protocol.connection_made(transport)
 
         return transport, protocol
+
+    def close(self):
+        result = super().close()
+        if self._writer_del is not None:
+            setattr(StreamWriter, '__del__', self._writer_del)
+        return result
 
     @classmethod
     def from_url(cls, url, **kwargs):
@@ -123,7 +135,8 @@ class ChainProxyConnector(TCPConnector):
 
         self._proxy_infos = proxy_infos
 
-        self._streams = []
+        # self._streams = []
+        self._writer_del = getattr(StreamWriter, '__del__', None)
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
@@ -159,8 +172,13 @@ class ChainProxyConnector(TCPConnector):
         # We need to keep references to the stream.reader/stream.writer so that they
         # are not garbage collected and closed while we're still using them.
         # See StreamWriter.__del__ method (was added in Python 3.11.5)
-        self._streams.append(stream)
+        # self._streams.append(stream)
         #
+
+        # Since the solution above leads to potential memory leaks,
+        # we just remove the StreamWriter's __del__ attribute
+        if hasattr(stream.writer.__class__, '__del__'):
+            delattr(stream.writer.__class__, '__del__')
 
         transport: BaseTransport = stream.writer.transport
         protocol: ResponseHandler = protocol_factory()
@@ -169,6 +187,12 @@ class ChainProxyConnector(TCPConnector):
         protocol.connection_made(transport)
 
         return transport, protocol
+
+    def close(self):
+        result = super().close()
+        if self._writer_del is not None:
+            setattr(StreamWriter, '__del__', self._writer_del)
+        return result
 
     @classmethod
     def from_urls(cls, urls: Iterable[str], **kwargs):
