@@ -28,6 +28,21 @@ class NoResolver(AbstractResolver):
         pass  # pragma: no cover
 
 
+class RepairedStreamWriter(StreamWriter):
+    def __del__(self):
+        pass
+
+
+def patch_stream(stream):
+    """
+    Fix issue https://github.com/romis2012/aiohttp-socks/issues/27
+    """
+    stream.writer.__class__ = RepairedStreamWriter
+    while hasattr(stream, '_inner'):
+        stream = stream._inner  # noqa
+        stream.writer.__class__ = RepairedStreamWriter
+
+
 class ProxyConnector(TCPConnector):
     def __init__(
         self,
@@ -50,9 +65,6 @@ class ProxyConnector(TCPConnector):
         self._proxy_password = password
         self._rdns = rdns
         self._proxy_ssl = proxy_ssl
-
-        # self._streams = []
-        self._writer_del = getattr(StreamWriter, '__del__', None)
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
@@ -79,32 +91,15 @@ class ProxyConnector(TCPConnector):
             timeout=connect_timeout,
         )
 
-        # Fix issue https://github.com/romis2012/aiohttp-socks/issues/27
-        # On Python 3.11.5
-        # We need to keep references to the stream.reader/stream.writer so that they
-        # are not garbage collected and closed while we're still using them.
-        # See StreamWriter.__del__ method (was added in Python 3.11.5)
-        # self._streams.append(stream)
-        #
-
-        # Since the solution above leads to potential memory leaks,
-        # we just remove the StreamWriter's __del__ attribute
-        if hasattr(stream.writer.__class__, '__del__'):
-            delattr(stream.writer.__class__, '__del__')
-
         transport: BaseTransport = stream.writer.transport
         protocol: ResponseHandler = protocol_factory()
 
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
 
-        return transport, protocol
+        patch_stream(stream)
 
-    def close(self):
-        result = super().close()
-        if self._writer_del is not None:
-            setattr(StreamWriter, '__del__', self._writer_del)
-        return result
+        return transport, protocol
 
     @classmethod
     def from_url(cls, url, **kwargs):
@@ -135,9 +130,6 @@ class ChainProxyConnector(TCPConnector):
 
         self._proxy_infos = proxy_infos
 
-        # self._streams = []
-        self._writer_del = getattr(StreamWriter, '__del__', None)
-
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
         proxies = []
@@ -167,32 +159,15 @@ class ChainProxyConnector(TCPConnector):
             timeout=connect_timeout,
         )
 
-        # Fix issue https://github.com/romis2012/aiohttp-socks/issues/27
-        # On Python 3.11.5
-        # We need to keep references to the stream.reader/stream.writer so that they
-        # are not garbage collected and closed while we're still using them.
-        # See StreamWriter.__del__ method (was added in Python 3.11.5)
-        # self._streams.append(stream)
-        #
-
-        # Since the solution above leads to potential memory leaks,
-        # we just remove the StreamWriter's __del__ attribute
-        if hasattr(stream.writer.__class__, '__del__'):
-            delattr(stream.writer.__class__, '__del__')
-
         transport: BaseTransport = stream.writer.transport
         protocol: ResponseHandler = protocol_factory()
 
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
 
-        return transport, protocol
+        patch_stream(stream)
 
-    def close(self):
-        result = super().close()
-        if self._writer_del is not None:
-            setattr(StreamWriter, '__del__', self._writer_del)
-        return result
+        return transport, protocol
 
     @classmethod
     def from_urls(cls, urls: Iterable[str], **kwargs):
