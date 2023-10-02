@@ -1,14 +1,13 @@
 import socket
 import typing
-from typing import Iterable
 from asyncio import BaseTransport, StreamWriter
+from typing import Iterable
 
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
 from aiohttp.client_proto import ResponseHandler
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
-from python_socks.async_.asyncio.v2 import ProxyChain
 
 
 class NoResolver(AbstractResolver):
@@ -38,7 +37,7 @@ def patch_stream(stream):
     Fix issue https://github.com/romis2012/aiohttp-socks/issues/27
     """
     stream.writer.__class__ = RepairedStreamWriter
-    while hasattr(stream, '_inner'):
+    while hasattr(stream, '_inner'):  # pragma: no cover
         stream = stream._inner  # noqa
         stream.writer.__class__ = RepairedStreamWriter
 
@@ -68,7 +67,7 @@ class ProxyConnector(TCPConnector):
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
-        proxy = Proxy.create(
+        proxy = Proxy(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
             port=self._proxy_port,
@@ -132,19 +131,19 @@ class ChainProxyConnector(TCPConnector):
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
-        proxies = []
+        forward = None
+        proxy = None
         for info in self._proxy_infos:
-            proxy = Proxy.create(
+            proxy = Proxy(
                 proxy_type=info.proxy_type,
                 host=info.host,
                 port=info.port,
                 username=info.username,
                 password=info.password,
                 rdns=info.rdns,
+                forward=forward,
             )
-            proxies.append(proxy)
-
-        proxy = ProxyChain(proxies)
+            forward = proxy
 
         connect_timeout = None
 

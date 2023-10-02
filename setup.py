@@ -36,6 +36,6 @@ setup(
     keywords='asyncio aiohttp socks socks5 socks4 http proxy',
     install_requires=[
         'aiohttp>=2.3.2',
-        'python-socks[asyncio]>=2.0.0,<3.0.0',
+        'python-socks[asyncio]>=2.4.3,<3.0.0',
     ],
 )
