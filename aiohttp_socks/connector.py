@@ -1,3 +1,4 @@
+import asyncio
 import socket
 import typing
 from asyncio import BaseTransport, StreamWriter
@@ -27,19 +28,17 @@ class NoResolver(AbstractResolver):
         pass  # pragma: no cover
 
 
-class RepairedStreamWriter(StreamWriter):
-    def __del__(self):
-        pass
-
-
-def patch_stream(stream):
+class _ResponseHandler(ResponseHandler):
     """
-    Fix issue https://github.com/romis2012/aiohttp-socks/issues/27
+    To fix issue https://github.com/romis2012/aiohttp-socks/issues/27
+    In Python>=3.11.5 we need to keep a reference to the StreamWriter
+    so that the underlying transport is not closed during garbage collection.
+    See StreamWriter.__del__ method (was added in Python 3.11.5)
     """
-    stream.writer.__class__ = RepairedStreamWriter
-    while hasattr(stream, '_inner'):  # pragma: no cover
-        stream = stream._inner  # noqa
-        stream.writer.__class__ = RepairedStreamWriter
+
+    def __init__(self, loop: asyncio.AbstractEventLoop, writer: StreamWriter):
+        super().__init__(loop)
+        self._writer = writer
 
 
 class ProxyConnector(TCPConnector):
@@ -91,12 +90,13 @@ class ProxyConnector(TCPConnector):
         )
 
         transport: BaseTransport = stream.writer.transport
-        protocol: ResponseHandler = protocol_factory()
+        protocol: ResponseHandler = _ResponseHandler(
+            loop=self._loop,
+            writer=stream.writer,
+        )
 
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
-
-        patch_stream(stream)
 
         return transport, protocol
 
@@ -159,12 +159,13 @@ class ChainProxyConnector(TCPConnector):
         )
 
         transport: BaseTransport = stream.writer.transport
-        protocol: ResponseHandler = protocol_factory()
+        protocol: ResponseHandler = _ResponseHandler(
+            loop=self._loop,
+            writer=stream.writer,
+        )
 
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
-
-        patch_stream(stream)
 
         return transport, protocol
 
