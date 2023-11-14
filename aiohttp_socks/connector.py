@@ -1,13 +1,20 @@
 import asyncio
+import random
 import socket
 import typing
-from asyncio import BaseTransport, StreamWriter
+from asyncio import (
+    BaseTransport,
+    StreamWriter,
+)
 from typing import Iterable
 
 from aiohttp import TCPConnector
 from aiohttp.abc import AbstractResolver
 from aiohttp.client_proto import ResponseHandler
-from python_socks import ProxyType, parse_proxy_url
+from python_socks import (
+    ProxyType,
+    parse_proxy_url,
+)
 from python_socks.async_.asyncio.v2 import Proxy
 
 
@@ -131,19 +138,16 @@ class ChainProxyConnector(TCPConnector):
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
-        forward = None
-        proxy = None
-        for info in self._proxy_infos:
-            proxy = Proxy(
-                proxy_type=info.proxy_type,
-                host=info.host,
-                port=info.port,
-                username=info.username,
-                password=info.password,
-                rdns=info.rdns,
-                forward=forward,
-            )
-            forward = proxy
+        proxy_info = random.choice(self._proxy_infos)
+
+        proxy = Proxy(
+            proxy_type=proxy_info.proxy_type,
+            host=proxy_info.host,
+            port=proxy_info.port,
+            username=proxy_info.username,
+            password=proxy_info.password,
+            rdns=proxy_info.rdns,
+        )
 
         connect_timeout = None
 
