@@ -51,6 +51,7 @@ class ProxyConnector(TCPConnector):
         password=None,
         rdns=None,
         proxy_ssl=None,
+        proxy_resolver=None,
         **kwargs,
     ):
         kwargs['resolver'] = NoResolver()
@@ -63,6 +64,7 @@ class ProxyConnector(TCPConnector):
         self._proxy_password = password
         self._rdns = rdns
         self._proxy_ssl = proxy_ssl
+        self._proxy_resolver=proxy_resolver
 
     # noinspection PyMethodOverriding
     async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
@@ -74,6 +76,7 @@ class ProxyConnector(TCPConnector):
             password=self._proxy_password,
             rdns=self._rdns,
             proxy_ssl=self._proxy_ssl,
+            resolver=self._proxy_resolver
         )
 
         connect_timeout = None
