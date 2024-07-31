@@ -105,7 +105,7 @@ class ProxyConnector(TCPConnector):
         try:
             host = addr_infos[0][4][0]
             port = addr_infos[0][4][1]
-        except IndexError:
+        except IndexError:  # pragma: no cover
             raise ValueError('Invalid arg: `addr_infos`')
 
         ssl = kwargs.get('ssl')
@@ -191,7 +191,7 @@ class ChainProxyConnector(TCPConnector):
         try:
             host = addr_infos[0][4][0]
             port = addr_infos[0][4][1]
-        except IndexError:
+        except IndexError:  # pragma: no cover
             raise ValueError('Invalid arg: `addr_infos`')
 
         ssl = kwargs.get('ssl')
