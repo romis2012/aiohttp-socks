@@ -4,7 +4,7 @@ import typing
 from asyncio import BaseTransport, StreamWriter
 from typing import Iterable
 
-from aiohttp import TCPConnector
+from aiohttp import TCPConnector, ClientConnectorError
 from aiohttp.abc import AbstractResolver
 from aiohttp.client_proto import ResponseHandler
 from python_socks import ProxyType, parse_proxy_url
@@ -64,8 +64,7 @@ class ProxyConnector(TCPConnector):
         self._rdns = rdns
         self._proxy_ssl = proxy_ssl
 
-    # noinspection PyMethodOverriding
-    async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
+    async def _connect_via_proxy(self, host, port, ssl=None, timeout=None):
         proxy = Proxy(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
@@ -76,17 +75,11 @@ class ProxyConnector(TCPConnector):
             proxy_ssl=self._proxy_ssl,
         )
 
-        connect_timeout = None
-
-        timeout = kwargs.get('timeout')
-        if timeout is not None:
-            connect_timeout = getattr(timeout, 'sock_connect', None)
-
         stream = await proxy.connect(
             dest_host=host,
             dest_port=port,
             dest_ssl=ssl,
-            timeout=connect_timeout,
+            timeout=timeout,
         )
 
         transport: BaseTransport = stream.writer.transport
@@ -99,6 +92,30 @@ class ProxyConnector(TCPConnector):
         protocol.connection_made(transport)
 
         return transport, protocol
+
+    async def _wrap_create_connection(
+        self,
+        *args,
+        addr_infos,
+        req,
+        timeout,
+        client_error=ClientConnectorError,
+        **kwargs,
+    ):
+        try:
+            host = addr_infos[0][4][0]
+            port = addr_infos[0][4][1]
+        except IndexError:
+            raise ValueError('Invalid arg: `addr_infos`')
+
+        ssl = kwargs.get('ssl')
+
+        return await self._connect_via_proxy(
+            host=host,
+            port=port,
+            ssl=ssl,
+            timeout=timeout.sock_connect,
+        )
 
     @classmethod
     def from_url(cls, url, **kwargs):
@@ -129,8 +146,7 @@ class ChainProxyConnector(TCPConnector):
 
         self._proxy_infos = proxy_infos
 
-    # noinspection PyMethodOverriding
-    async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
+    async def _connect_via_proxy(self, host, port, ssl=None, timeout=None):
         forward = None
         proxy = None
         for info in self._proxy_infos:
@@ -145,17 +161,11 @@ class ChainProxyConnector(TCPConnector):
             )
             forward = proxy
 
-        connect_timeout = None
-
-        timeout = kwargs.get('timeout')
-        if timeout is not None:
-            connect_timeout = getattr(timeout, 'sock_connect', None)
-
         stream = await proxy.connect(
             dest_host=host,
             dest_port=port,
             dest_ssl=ssl,
-            timeout=connect_timeout,
+            timeout=timeout,
         )
 
         transport: BaseTransport = stream.writer.transport
@@ -168,6 +178,30 @@ class ChainProxyConnector(TCPConnector):
         protocol.connection_made(transport)
 
         return transport, protocol
+
+    async def _wrap_create_connection(
+        self,
+        *args,
+        addr_infos,
+        req,
+        timeout,
+        client_error=ClientConnectorError,
+        **kwargs,
+    ):
+        try:
+            host = addr_infos[0][4][0]
+            port = addr_infos[0][4][1]
+        except IndexError:
+            raise ValueError('Invalid arg: `addr_infos`')
+
+        ssl = kwargs.get('ssl')
+
+        return await self._connect_via_proxy(
+            host=host,
+            port=port,
+            ssl=ssl,
+            timeout=timeout.sock_connect,
+        )
 
     @classmethod
     def from_urls(cls, urls: Iterable[str], **kwargs):

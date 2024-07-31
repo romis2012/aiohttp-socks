@@ -5,8 +5,8 @@ import sys
 
 from setuptools import setup
 
-if sys.version_info < (3, 6, 0):
-    raise RuntimeError('aiohttp-socks requires Python 3.6+')
+if sys.version_info < (3, 8, 0):
+    raise RuntimeError('aiohttp-socks requires Python 3.8+')
 
 
 def get_version():
@@ -35,7 +35,7 @@ setup(
     packages=['aiohttp_socks'],
     keywords='asyncio aiohttp socks socks5 socks4 http proxy',
     install_requires=[
-        'aiohttp>=2.3.2',
+        'aiohttp>=3.10.0',
         'python-socks[asyncio]>=2.4.3,<3.0.0',
     ],
 )
