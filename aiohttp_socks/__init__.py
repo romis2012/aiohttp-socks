@@ -1,5 +1,5 @@
 __title__ = 'aiohttp-socks'
-__version__ = '0.8.4'
+__version__ = '0.9.0'
 
 from python_socks import (
     ProxyError,
