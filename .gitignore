@@ -39,4 +39,5 @@ virtualenv.py
 .install-deps
 .develop
 .idea/
+.vscode/
 usage*.py
