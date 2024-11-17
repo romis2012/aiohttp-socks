@@ -1,3 +1,32 @@
+[build-system]
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name        = 'aiohttp_socks'
+license     = {text = 'Apache-2.0'}
+description = 'Proxy connector for aiohttp'
+readme      = 'README.md'
+authors     = [{name = 'Roman Snegirev', email = 'snegiryev@gmail.com'}]
+keywords    = [
+    'asyncio', 'aiohttp', 'socks', 'socks5', 'socks4', 'http', 'proxy'
+]
+requires-python = ">=3.8.0"
+dependencies    = [
+    'aiohttp>=3.10.0',
+    'python-socks[asyncio]>=2.4.3,<3.0.0',
+]
+dynamic = ['version']
+
+[project.urls]
+Homepage = 'https://github.com/romis2012/aiohttp-socks'
+
+[tool.setuptools.dynamic]
+version = {attr = 'aiohttp_socks.__version__'}
+
+[tool.setuptools.packages.find]
+include = ['aiohttp_socks*']
+
 [tool.black]
 line-length = 99
 target-version = ['py37', 'py38', 'py39']
