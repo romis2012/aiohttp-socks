@@ -3,33 +3,48 @@ requires = ['setuptools']
 build-backend = 'setuptools.build_meta'
 
 [project]
-name        = 'aiohttp_socks'
-license     = {text = 'Apache-2.0'}
+name = 'aiohttp_socks'
+license = { text = 'Apache-2.0' }
 description = 'Proxy connector for aiohttp'
-readme      = 'README.md'
-authors     = [{name = 'Roman Snegirev', email = 'snegiryev@gmail.com'}]
-keywords    = [
-    'asyncio', 'aiohttp', 'socks', 'socks5', 'socks4', 'http', 'proxy'
-]
+readme = 'README.md'
+authors = [{ name = 'Roman Snegirev', email = 'snegiryev@gmail.com' }]
+keywords = ['asyncio', 'aiohttp', 'socks', 'socks5', 'socks4', 'http', 'proxy']
 requires-python = ">=3.8.0"
-dependencies    = [
-    'aiohttp>=3.10.0',
-    'python-socks[asyncio]>=2.4.3,<3.0.0',
-]
+dependencies = ['aiohttp>=3.10.0', 'python-socks[asyncio]>=2.4.3,<3.0.0']
 dynamic = ['version']
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Internet :: WWW/HTTP",
+    "Intended Audience :: Developers",
+    "Framework :: AsyncIO",
+    "License :: OSI Approved :: Apache Software License",
+]
 
 [project.urls]
-Homepage = 'https://github.com/romis2012/aiohttp-socks'
+homepage = 'https://github.com/romis2012/aiohttp-socks'
+repository = 'https://github.com/romis2012/aiohttp-socks'
 
 [tool.setuptools.dynamic]
-version = {attr = 'aiohttp_socks.__version__'}
+version = { attr = 'aiohttp_socks.__version__' }
 
 [tool.setuptools.packages.find]
 include = ['aiohttp_socks*']
 
 [tool.black]
 line-length = 99
-target-version = ['py37', 'py38', 'py39']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 skip-string-normalization = true
 preview = true
 verbose = true
