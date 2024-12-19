@@ -1,5 +1,4 @@
 import asyncio
-import ssl
 
 import aiohttp
 import pytest  # noqa
@@ -7,30 +6,28 @@ from aiohttp import ClientResponse, TCPConnector
 from yarl import URL  # noqa
 
 from aiohttp_socks import (
-    ProxyType,
-    ProxyConnector,
     ChainProxyConnector,
-    ProxyInfo,
-    ProxyError,
     ProxyConnectionError,
+    ProxyConnector,
+    ProxyError,
+    ProxyInfo,
     ProxyTimeoutError,
-    open_connection,
-    create_connection,
+    ProxyType,
 )
 from tests.config import (
-    TEST_URL_IPV4,
-    SOCKS5_IPV4_URL,
-    PROXY_HOST_IPV4,
-    SOCKS5_PROXY_PORT,
+    HTTP_PROXY_PORT,
+    HTTP_PROXY_URL,
     LOGIN,
     PASSWORD,
-    TEST_URL_IPV4_DELAY,
+    PROXY_HOST_IPV4,
     SKIP_IPV6_TESTS,
-    SOCKS5_IPV6_URL,
-    SOCKS4_URL,
-    HTTP_PROXY_URL,
     SOCKS4_PROXY_PORT,
-    HTTP_PROXY_PORT,
+    SOCKS4_URL,
+    SOCKS5_IPV4_URL,
+    SOCKS5_IPV6_URL,
+    SOCKS5_PROXY_PORT,
+    TEST_URL_IPV4,
+    TEST_URL_IPV4_DELAY,
     TEST_URL_IPV4_HTTPS,
 )
 
@@ -220,65 +217,3 @@ async def test_chain_proxy_ctor(url, rdns, target_ssl_context):
         ssl_context=target_ssl_context,
     )
     assert res.status == 200
-
-
-@pytest.mark.parametrize('url', (TEST_URL_IPV4, TEST_URL_IPV4_HTTPS))
-@pytest.mark.parametrize('rdns', (True, False))
-@pytest.mark.asyncio
-async def test_socks5_open_connection(url, rdns, target_ssl_context):
-    url = URL(url)
-
-    ssl_context = None
-    if url.scheme == 'https':
-        ssl_context = target_ssl_context
-
-    reader, writer = await open_connection(
-        proxy_url=SOCKS5_IPV4_URL,
-        host=url.host,
-        port=url.port,
-        ssl=ssl_context,
-        server_hostname=url.host if ssl_context else None,
-        rdns=rdns,
-    )
-    request = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (url.path_qs, url.host)
-
-    writer.write(request.encode())
-    response = await reader.read(-1)
-    assert b'200 OK' in response
-
-
-@pytest.mark.parametrize('url', (TEST_URL_IPV4, TEST_URL_IPV4_HTTPS))
-@pytest.mark.parametrize('rdns', (True, False))
-@pytest.mark.asyncio
-async def test_socks5_http_create_connection(
-    url: str,
-    rdns: bool,
-    event_loop: asyncio.AbstractEventLoop,
-    target_ssl_context: ssl.SSLContext,
-):
-    url = URL(url)
-
-    ssl_context = None
-    if url.scheme == 'https':
-        ssl_context = target_ssl_context
-
-    reader = asyncio.StreamReader(loop=event_loop)
-    protocol = asyncio.StreamReaderProtocol(reader, loop=event_loop)
-
-    transport, _ = await create_connection(
-        proxy_url=SOCKS5_IPV4_URL,
-        protocol_factory=lambda: protocol,
-        host=url.host,
-        port=url.port,
-        ssl=ssl_context,
-        server_hostname=url.host if ssl_context else None,
-        rdns=rdns,
-    )
-
-    writer = asyncio.StreamWriter(transport, protocol, reader, event_loop)
-
-    request = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (url.path_qs, url.host)
-
-    writer.write(request.encode())
-    response = await reader.read(-1)
-    assert b'200 OK' in response
