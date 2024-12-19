@@ -1,26 +1,14 @@
 __title__ = 'aiohttp-socks'
 __version__ = '0.9.1'
 
-from python_socks import (
+from python_socks import (  # type: ignore
+    ProxyConnectionError,
     ProxyError,
     ProxyTimeoutError,
-    ProxyConnectionError,
-    ProxyType
+    ProxyType,
 )
 
-from .connector import (
-    ProxyConnector,
-    ChainProxyConnector,
-    ProxyInfo
-)
-from .utils import open_connection, create_connection
-
-from ._deprecated import (
-    SocksVer,
-    SocksConnector,
-    SocksConnectionError,
-    SocksError
-)
+from .connector import ChainProxyConnector, ProxyConnector, ProxyInfo
 
 __all__ = (
     '__title__',
@@ -32,11 +20,4 @@ __all__ = (
     'ProxyError',
     'ProxyConnectionError',
     'ProxyTimeoutError',
-    'open_connection',
-    'create_connection',
-
-    'SocksVer',
-    'SocksConnector',
-    'SocksError',
-    'SocksConnectionError',
 )

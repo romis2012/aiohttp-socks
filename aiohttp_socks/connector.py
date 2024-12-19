@@ -1,18 +1,27 @@
 import asyncio
 import socket
-import typing
-from asyncio import BaseTransport, StreamWriter
-from typing import Iterable
+import ssl
+from asyncio import StreamWriter
+from typing import Any, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
 
-from aiohttp import TCPConnector, ClientConnectorError
-from aiohttp.abc import AbstractResolver
+import aiohappyeyeballs
+from aiohttp import ClientRequest, ClientTimeout, Fingerprint, TCPConnector
+from aiohttp.abc import AbstractResolver, ResolveResult
+from aiohttp.client_exceptions import ClientConnectionError, ClientConnectorError
 from aiohttp.client_proto import ResponseHandler
-from python_socks import ProxyType, parse_proxy_url
-from python_socks.async_.asyncio.v2 import Proxy
+from aiohttp.connector import SSLContext
+from aiohttp.helpers import sentinel
+from python_socks import ProxyType, parse_proxy_url  # type: ignore
+from python_socks.async_.asyncio.v2 import Proxy  # type: ignore
 
 
 class NoResolver(AbstractResolver):
-    async def resolve(self, host, port=0, family=socket.AF_INET):
+    async def resolve(
+        self,
+        host: str,
+        port: int = 0,
+        family: socket.AddressFamily = socket.AF_INET,  # pylint: disable=no-member
+    ) -> list[ResolveResult]:
         return [
             {
                 'hostname': host,
@@ -36,7 +45,7 @@ class _ResponseHandler(ResponseHandler):
     See StreamWriter.__del__ method (was added in Python 3.11.5)
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, writer: StreamWriter):
+    def __init__(self, loop: asyncio.AbstractEventLoop, writer: StreamWriter) -> None:
         super().__init__(loop)
         self._writer = writer
 
@@ -44,17 +53,54 @@ class _ResponseHandler(ResponseHandler):
 class ProxyConnector(TCPConnector):
     def __init__(
         self,
-        proxy_type=ProxyType.SOCKS5,
-        host=None,
-        port=None,
-        username=None,
-        password=None,
-        rdns=None,
-        proxy_ssl=None,
-        **kwargs,
+        host: str,
+        port: int,
+        proxy_type: ProxyType = ProxyType.SOCKS5,
+        username: str = "",
+        password: str = "",
+        rdns: bool = True,
+        proxy_ssl: Optional[ssl.SSLContext] = None,
+        *,
+        verify_ssl: bool = True,
+        fingerprint: Optional[bytes] = None,
+        use_dns_cache: bool = True,
+        ttl_dns_cache: Optional[int] = 10,
+        family: socket.AddressFamily = socket.AddressFamily.AF_UNSPEC,  # pylint: disable=no-member
+        ssl_context: Optional[SSLContext] = None,
+        ssl: Union[bool, Fingerprint, SSLContext] = True,  # pylint: disable=redefined-outer-name
+        local_addr: Optional[Tuple[str, int]] = None,
+        resolver: Optional[AbstractResolver] = None,
+        keepalive_timeout: Union[None, float, object] = sentinel,
+        force_close: bool = False,
+        limit: int = 100,
+        limit_per_host: int = 0,
+        enable_cleanup_closed: bool = False,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        timeout_ceil_threshold: float = 5,
+        happy_eyeballs_delay: Optional[float] = 0.25,
+        interleave: Optional[int] = None,
     ):
-        kwargs['resolver'] = NoResolver()
-        super().__init__(**kwargs)
+        resolver = NoResolver()
+        super().__init__(
+            verify_ssl=verify_ssl,
+            fingerprint=fingerprint,
+            use_dns_cache=use_dns_cache,
+            ttl_dns_cache=ttl_dns_cache,
+            family=family,
+            ssl_context=ssl_context,
+            ssl=ssl,
+            local_addr=local_addr,
+            resolver=resolver,
+            keepalive_timeout=keepalive_timeout,
+            force_close=force_close,
+            limit=limit,
+            limit_per_host=limit_per_host,
+            enable_cleanup_closed=enable_cleanup_closed,
+            loop=loop,
+            timeout_ceil_threshold=timeout_ceil_threshold,
+            happy_eyeballs_delay=happy_eyeballs_delay,
+            interleave=interleave,
+        )
 
         self._proxy_type = proxy_type
         self._proxy_host = host
@@ -64,7 +110,13 @@ class ProxyConnector(TCPConnector):
         self._rdns = rdns
         self._proxy_ssl = proxy_ssl
 
-    async def _connect_via_proxy(self, host, port, ssl=None, timeout=None):
+    async def _connect_via_proxy(
+        self,
+        host: str,
+        port: int,
+        ssl: Optional[SSLContext] = None,  # pylint: disable=redefined-outer-name
+        timeout: Optional[float] = None,
+    ) -> tuple[asyncio.Transport, ResponseHandler]:
         proxy = Proxy(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
@@ -72,21 +124,18 @@ class ProxyConnector(TCPConnector):
             username=self._proxy_username,
             password=self._proxy_password,
             rdns=self._rdns,
-            proxy_ssl=self._proxy_ssl,
+            proxy_ssl=self._proxy_ssl,  # type: ignore
         )
 
         stream = await proxy.connect(
             dest_host=host,
             dest_port=port,
-            dest_ssl=ssl,
-            timeout=timeout,
+            dest_ssl=ssl,  # type: ignore
+            timeout=timeout,  # type: ignore
         )
 
-        transport: BaseTransport = stream.writer.transport
-        protocol: ResponseHandler = _ResponseHandler(
-            loop=self._loop,
-            writer=stream.writer,
-        )
+        transport: asyncio.Transport = stream.writer.transport  # type: ignore
+        protocol = _ResponseHandler(loop=self._loop, writer=stream.writer)
 
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
@@ -95,21 +144,20 @@ class ProxyConnector(TCPConnector):
 
     async def _wrap_create_connection(
         self,
-        *args,
-        addr_infos,
-        req,
-        timeout,
-        client_error=ClientConnectorError,
-        **kwargs,
-    ):
+        *args: Any,
+        addr_infos: List[aiohappyeyeballs.AddrInfoType],  # type: ignore
+        req: ClientRequest,
+        timeout: ClientTimeout,
+        client_error: type[Exception] = ClientConnectionError,
+        **kwargs: Any,
+    ) -> Tuple[asyncio.Transport, ResponseHandler]:
         try:
-            host = addr_infos[0][4][0]
-            port = addr_infos[0][4][1]
-        except IndexError:  # pragma: no cover
-            raise ValueError('Invalid arg: `addr_infos`')
+            host = cast(str, addr_infos[0][4][0])
+            port = cast(int, addr_infos[0][4][1])
+        except IndexError as e:
+            raise ValueError("Invalid arg: `addr_infos`") from e
 
-        ssl = kwargs.get('ssl')
-
+        ssl: Optional[SSLContext] = kwargs.get("ssl")  # pylint: disable=redefined-outer-name
         return await self._connect_via_proxy(
             host=host,
             port=port,
@@ -118,8 +166,12 @@ class ProxyConnector(TCPConnector):
         )
 
     @classmethod
-    def from_url(cls, url, **kwargs):
-        proxy_type, host, port, username, password = parse_proxy_url(url)
+    def from_url(cls, url: str, **kwargs: Any) -> 'ProxyConnector':
+        proxy_type, host, port, username, password = cast(
+            Tuple[ProxyType, str, int, str, str],
+            parse_proxy_url(url),
+        )
+
         return cls(
             proxy_type=proxy_type,
             host=host,
@@ -130,45 +182,89 @@ class ProxyConnector(TCPConnector):
         )
 
 
-class ProxyInfo(typing.NamedTuple):
+class ProxyInfo(NamedTuple):
     proxy_type: ProxyType
     host: str
     port: int
-    username: typing.Optional[str] = None
-    password: typing.Optional[str] = None
-    rdns: typing.Optional[bool] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    rdns: Optional[bool] = None
 
 
 class ChainProxyConnector(TCPConnector):
-    def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs):
-        kwargs['resolver'] = NoResolver()
-        super().__init__(**kwargs)
-
+    def __init__(
+        self,
+        proxy_infos: Iterable[ProxyInfo],
+        *,
+        verify_ssl: bool = True,
+        fingerprint: Optional[bytes] = None,
+        use_dns_cache: bool = True,
+        ttl_dns_cache: Optional[int] = 10,
+        family: socket.AddressFamily = socket.AddressFamily.AF_UNSPEC,  # pylint: disable=no-member
+        ssl_context: Optional[SSLContext] = None,
+        ssl: Union[bool, Fingerprint, SSLContext] = True,  # pylint: disable=redefined-outer-name
+        local_addr: Optional[Tuple[str, int]] = None,
+        resolver: Optional[AbstractResolver] = None,
+        keepalive_timeout: Union[None, float, object] = sentinel,
+        force_close: bool = False,
+        limit: int = 100,
+        limit_per_host: int = 0,
+        enable_cleanup_closed: bool = False,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        timeout_ceil_threshold: float = 5,
+        happy_eyeballs_delay: Optional[float] = 0.25,
+        interleave: Optional[int] = None,
+    ):
+        resolver = NoResolver()
+        super().__init__(
+            verify_ssl=verify_ssl,
+            fingerprint=fingerprint,
+            use_dns_cache=use_dns_cache,
+            ttl_dns_cache=ttl_dns_cache,
+            family=family,
+            ssl_context=ssl_context,
+            ssl=ssl,
+            local_addr=local_addr,
+            resolver=resolver,
+            keepalive_timeout=keepalive_timeout,
+            force_close=force_close,
+            limit=limit,
+            limit_per_host=limit_per_host,
+            enable_cleanup_closed=enable_cleanup_closed,
+            loop=loop,
+            timeout_ceil_threshold=timeout_ceil_threshold,
+            happy_eyeballs_delay=happy_eyeballs_delay,
+            interleave=interleave,
+        )
         self._proxy_infos = proxy_infos
 
-    async def _connect_via_proxy(self, host, port, ssl=None, timeout=None):
-        forward = None
-        proxy = None
+    async def _connect_via_proxy(
+        self,
+        host: str,
+        port: int,
+        ssl: Optional[SSLContext] = None,  # pylint: disable=redefined-outer-name
+        timeout: Optional[float] = None,
+    ) -> tuple[asyncio.Transport, ResponseHandler]:
+        forward: Proxy = None  # type: ignore
         for info in self._proxy_infos:
-            proxy = Proxy(
+            forward = Proxy(
                 proxy_type=info.proxy_type,
                 host=info.host,
                 port=info.port,
-                username=info.username,
-                password=info.password,
-                rdns=info.rdns,
-                forward=forward,
+                username=info.username,  # type: ignore
+                password=info.password,  # type: ignore
+                rdns=info.rdns,  # type: ignore
+                forward=forward,  # type: ignore
             )
-            forward = proxy
 
-        stream = await proxy.connect(
+        stream = await forward.connect(
             dest_host=host,
             dest_port=port,
-            dest_ssl=ssl,
-            timeout=timeout,
+            dest_ssl=ssl,  # type: ignore
+            timeout=timeout,  # type: ignore
         )
 
-        transport: BaseTransport = stream.writer.transport
+        transport: asyncio.Transport = stream.writer.transport  # type: ignore
         protocol: ResponseHandler = _ResponseHandler(
             loop=self._loop,
             writer=stream.writer,
@@ -181,21 +277,20 @@ class ChainProxyConnector(TCPConnector):
 
     async def _wrap_create_connection(
         self,
-        *args,
-        addr_infos,
-        req,
-        timeout,
-        client_error=ClientConnectorError,
-        **kwargs,
-    ):
+        *args: Any,
+        addr_infos: List[aiohappyeyeballs.AddrInfoType],  # type: ignore
+        req: ClientRequest,
+        timeout: ClientTimeout,
+        client_error: type[Exception] = ClientConnectorError,
+        **kwargs: Any,
+    ) -> Tuple[asyncio.Transport, ResponseHandler]:
         try:
-            host = addr_infos[0][4][0]
-            port = addr_infos[0][4][1]
-        except IndexError:  # pragma: no cover
-            raise ValueError('Invalid arg: `addr_infos`')
+            host = cast(str, addr_infos[0][4][0])
+            port = cast(int, addr_infos[0][4][1])
+        except IndexError as e:
+            raise ValueError("Invalid arg: `addr_infos`") from e
 
-        ssl = kwargs.get('ssl')
-
+        ssl: Optional[SSLContext] = kwargs.get("ssl")  # pylint: disable=redefined-outer-name
         return await self._connect_via_proxy(
             host=host,
             port=port,
@@ -204,10 +299,14 @@ class ChainProxyConnector(TCPConnector):
         )
 
     @classmethod
-    def from_urls(cls, urls: Iterable[str], **kwargs):
-        infos = []
+    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> 'ChainProxyConnector':
+        infos: List[ProxyInfo] = []
+
         for url in urls:
-            proxy_type, host, port, username, password = parse_proxy_url(url)
+            proxy_type, host, port, username, password = cast(
+                Tuple[ProxyType, str, int, str, str],
+                parse_proxy_url(url),
+            )
             proxy_info = ProxyInfo(
                 proxy_type=proxy_type,
                 host=host,

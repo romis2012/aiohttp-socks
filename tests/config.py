@@ -82,5 +82,5 @@ TEST_URL_IPV4_HTTPS = 'https://{host}:{port}/ip'.format(
 )
 
 
-def resolve_path(path):
+def resolve_path(path: str) -> str:
     return os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), path))

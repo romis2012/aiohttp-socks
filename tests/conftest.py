@@ -3,26 +3,26 @@ from unittest import mock
 
 import pytest  # noqa
 import trustme  # noqa
-from python_socks.async_.asyncio._resolver import Resolver as AsyncioResolver  # noqa
+from python_socks.async_.asyncio._resolver import Resolver as AsyncioResolver
 
 from tests.config import (
-    PROXY_HOST_IPV4,
-    PROXY_HOST_IPV6,
-    SOCKS5_PROXY_PORT,
+    HTTP_PROXY_PORT,
     LOGIN,
     PASSWORD,
+    PROXY_HOST_IPV4,
+    PROXY_HOST_IPV6,
     SKIP_IPV6_TESTS,
-    HTTP_PROXY_PORT,
     SOCKS4_PORT_NO_AUTH,
     SOCKS4_PROXY_PORT,
+    SOCKS5_PROXY_PORT,
     SOCKS5_PROXY_PORT_NO_AUTH,
-    TEST_PORT_IPV4,
-    TEST_PORT_IPV6,
     TEST_HOST_IPV4,
     TEST_HOST_IPV6,
-    TEST_PORT_IPV4_HTTPS,
     TEST_HOST_NAME_IPV4,
     TEST_HOST_NAME_IPV6,
+    TEST_PORT_IPV4,
+    TEST_PORT_IPV4_HTTPS,
+    TEST_PORT_IPV6,
 )
 from tests.http_server import HttpServer, HttpServerConfig
 from tests.mocks import async_resolve_factory

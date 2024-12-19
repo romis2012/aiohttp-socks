@@ -10,7 +10,7 @@ readme = 'README.md'
 authors = [{ name = 'Roman Snegirev', email = 'snegiryev@gmail.com' }]
 keywords = ['asyncio', 'aiohttp', 'socks', 'socks5', 'socks4', 'http', 'proxy']
 requires-python = ">=3.8.0"
-dependencies = ['aiohttp>=3.10.0', 'python-socks[asyncio]>=2.4.3,<3.0.0']
+dependencies = ['aiohttp>=3.10.0', 'python-socks[asyncio]>=2.5.3,<3.0.0']
 dynamic = ['version']
 classifiers = [
     "Development Status :: 4 - Beta",
