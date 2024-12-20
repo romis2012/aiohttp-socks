@@ -1,18 +1,23 @@
 import asyncio
 import socket
-import typing
+import ssl
 from asyncio import BaseTransport, StreamWriter
-from typing import Iterable
+from typing import Any, Iterable, NamedTuple, Optional
 
-from aiohttp import TCPConnector, ClientConnectorError
-from aiohttp.abc import AbstractResolver
+from aiohttp import ClientConnectorError, TCPConnector
+from aiohttp.abc import AbstractResolver, ResolveResult
 from aiohttp.client_proto import ResponseHandler
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
 
 
 class NoResolver(AbstractResolver):
-    async def resolve(self, host, port=0, family=socket.AF_INET):
+    async def resolve(
+        self,
+        host: str,
+        port: int = 0,
+        family: socket.AddressFamily = socket.AF_INET,  # pylint: disable=no-member
+    ) -> list[ResolveResult]:
         return [
             {
                 'hostname': host,
@@ -36,7 +41,7 @@ class _ResponseHandler(ResponseHandler):
     See StreamWriter.__del__ method (was added in Python 3.11.5)
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, writer: StreamWriter):
+    def __init__(self, loop: asyncio.AbstractEventLoop, writer: StreamWriter) -> None:
         super().__init__(loop)
         self._writer = writer
 
@@ -44,15 +49,15 @@ class _ResponseHandler(ResponseHandler):
 class ProxyConnector(TCPConnector):
     def __init__(
         self,
-        proxy_type=ProxyType.SOCKS5,
-        host=None,
-        port=None,
-        username=None,
-        password=None,
-        rdns=None,
-        proxy_ssl=None,
-        **kwargs,
-    ):
+        proxy_type: ProxyType = ProxyType.SOCKS5,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        rdns: Optional[bool] = None,
+        proxy_ssl: Optional[ssl.SSLContext] = None,
+        **kwargs: Any,
+    ) -> None:
         kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
@@ -118,7 +123,7 @@ class ProxyConnector(TCPConnector):
         )
 
     @classmethod
-    def from_url(cls, url, **kwargs):
+    def from_url(cls, url: str, **kwargs: Any) -> 'ProxyConnector':
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls(
             proxy_type=proxy_type,
@@ -130,13 +135,13 @@ class ProxyConnector(TCPConnector):
         )
 
 
-class ProxyInfo(typing.NamedTuple):
+class ProxyInfo(NamedTuple):
     proxy_type: ProxyType
     host: str
     port: int
-    username: typing.Optional[str] = None
-    password: typing.Optional[str] = None
-    rdns: typing.Optional[bool] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    rdns: Optional[bool] = None
 
 
 class ChainProxyConnector(TCPConnector):
@@ -204,7 +209,7 @@ class ChainProxyConnector(TCPConnector):
         )
 
     @classmethod
-    def from_urls(cls, urls: Iterable[str], **kwargs):
+    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> 'ChainProxyConnector':
         infos = []
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)
