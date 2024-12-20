@@ -2,7 +2,7 @@ import asyncio
 import socket
 import ssl
 from asyncio import BaseTransport, StreamWriter
-from typing import Any, Iterable, NamedTuple, Optional
+from typing import Any, Iterable, NamedTuple, Optional, List
 
 from aiohttp import ClientConnectorError, TCPConnector
 from aiohttp.abc import AbstractResolver, ResolveResult
@@ -17,7 +17,7 @@ class NoResolver(AbstractResolver):
         host: str,
         port: int = 0,
         family: socket.AddressFamily = socket.AF_INET,  # pylint: disable=no-member
-    ) -> list[ResolveResult]:
+    ) -> List[ResolveResult]:
         return [
             {
                 'hostname': host,
