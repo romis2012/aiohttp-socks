@@ -2,15 +2,12 @@ import asyncio
 import socket
 import ssl
 from asyncio import StreamWriter
-from typing import Any, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import Any, Iterable, List, NamedTuple, Optional, Tuple, cast
 
-import aiohappyeyeballs
-from aiohttp import ClientRequest, ClientTimeout, Fingerprint, TCPConnector
+from aiohttp import ClientTimeout, TCPConnector
 from aiohttp.abc import AbstractResolver, ResolveResult
-from aiohttp.client_exceptions import ClientConnectionError, ClientConnectorError
 from aiohttp.client_proto import ResponseHandler
 from aiohttp.connector import SSLContext
-from aiohttp.helpers import sentinel
 from python_socks import ProxyType, parse_proxy_url  # type: ignore
 from python_socks.async_.asyncio.v2 import Proxy  # type: ignore
 
@@ -60,47 +57,10 @@ class ProxyConnector(TCPConnector):
         password: str = "",
         rdns: bool = True,
         proxy_ssl: Optional[ssl.SSLContext] = None,
-        *,
-        verify_ssl: bool = True,
-        fingerprint: Optional[bytes] = None,
-        use_dns_cache: bool = True,
-        ttl_dns_cache: Optional[int] = 10,
-        family: socket.AddressFamily = socket.AddressFamily.AF_UNSPEC,  # pylint: disable=no-member
-        ssl_context: Optional[SSLContext] = None,
-        ssl: Union[bool, Fingerprint, SSLContext] = True,  # pylint: disable=redefined-outer-name
-        local_addr: Optional[Tuple[str, int]] = None,
-        resolver: Optional[AbstractResolver] = None,
-        keepalive_timeout: Union[None, float, object] = sentinel,
-        force_close: bool = False,
-        limit: int = 100,
-        limit_per_host: int = 0,
-        enable_cleanup_closed: bool = False,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-        timeout_ceil_threshold: float = 5,
-        happy_eyeballs_delay: Optional[float] = 0.25,
-        interleave: Optional[int] = None,
-    ):
-        resolver = NoResolver()
-        super().__init__(
-            verify_ssl=verify_ssl,
-            fingerprint=fingerprint,
-            use_dns_cache=use_dns_cache,
-            ttl_dns_cache=ttl_dns_cache,
-            family=family,
-            ssl_context=ssl_context,
-            ssl=ssl,
-            local_addr=local_addr,
-            resolver=resolver,
-            keepalive_timeout=keepalive_timeout,
-            force_close=force_close,
-            limit=limit,
-            limit_per_host=limit_per_host,
-            enable_cleanup_closed=enable_cleanup_closed,
-            loop=loop,
-            timeout_ceil_threshold=timeout_ceil_threshold,
-            happy_eyeballs_delay=happy_eyeballs_delay,
-            interleave=interleave,
-        )
+        **kwargs: Any,
+    ) -> None:
+        kwargs['resolver'] = NoResolver()
+        super().__init__(**kwargs)
 
         self._proxy_type = proxy_type
         self._proxy_host = host
@@ -145,10 +105,8 @@ class ProxyConnector(TCPConnector):
     async def _wrap_create_connection(
         self,
         *args: Any,
-        addr_infos: List[aiohappyeyeballs.AddrInfoType],  # type: ignore
-        req: ClientRequest,
+        addr_infos: List[Any],
         timeout: ClientTimeout,
-        client_error: type[Exception] = ClientConnectionError,
         **kwargs: Any,
     ) -> Tuple[asyncio.Transport, ResponseHandler]:
         try:
@@ -195,47 +153,10 @@ class ChainProxyConnector(TCPConnector):
     def __init__(
         self,
         proxy_infos: Iterable[ProxyInfo],
-        *,
-        verify_ssl: bool = True,
-        fingerprint: Optional[bytes] = None,
-        use_dns_cache: bool = True,
-        ttl_dns_cache: Optional[int] = 10,
-        family: socket.AddressFamily = socket.AddressFamily.AF_UNSPEC,  # pylint: disable=no-member
-        ssl_context: Optional[SSLContext] = None,
-        ssl: Union[bool, Fingerprint, SSLContext] = True,  # pylint: disable=redefined-outer-name
-        local_addr: Optional[Tuple[str, int]] = None,
-        resolver: Optional[AbstractResolver] = None,
-        keepalive_timeout: Union[None, float, object] = sentinel,
-        force_close: bool = False,
-        limit: int = 100,
-        limit_per_host: int = 0,
-        enable_cleanup_closed: bool = False,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-        timeout_ceil_threshold: float = 5,
-        happy_eyeballs_delay: Optional[float] = 0.25,
-        interleave: Optional[int] = None,
+        **kwargs: Any,
     ):
-        resolver = NoResolver()
-        super().__init__(
-            verify_ssl=verify_ssl,
-            fingerprint=fingerprint,
-            use_dns_cache=use_dns_cache,
-            ttl_dns_cache=ttl_dns_cache,
-            family=family,
-            ssl_context=ssl_context,
-            ssl=ssl,
-            local_addr=local_addr,
-            resolver=resolver,
-            keepalive_timeout=keepalive_timeout,
-            force_close=force_close,
-            limit=limit,
-            limit_per_host=limit_per_host,
-            enable_cleanup_closed=enable_cleanup_closed,
-            loop=loop,
-            timeout_ceil_threshold=timeout_ceil_threshold,
-            happy_eyeballs_delay=happy_eyeballs_delay,
-            interleave=interleave,
-        )
+        kwargs['resolver'] = NoResolver()
+        super().__init__(**kwargs)
         self._proxy_infos = proxy_infos
 
     async def _connect_via_proxy(
@@ -278,10 +199,8 @@ class ChainProxyConnector(TCPConnector):
     async def _wrap_create_connection(
         self,
         *args: Any,
-        addr_infos: List[aiohappyeyeballs.AddrInfoType],  # type: ignore
-        req: ClientRequest,
+        addr_infos: List[Any],
         timeout: ClientTimeout,
-        client_error: type[Exception] = ClientConnectorError,
         **kwargs: Any,
     ) -> Tuple[asyncio.Transport, ResponseHandler]:
         try:
