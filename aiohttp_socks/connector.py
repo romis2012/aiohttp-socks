@@ -1,6 +1,6 @@
 import asyncio
 import socket
-import ssl
+from ssl import SSLContext
 from asyncio import BaseTransport, StreamWriter
 from typing import Any, Iterable, NamedTuple, Optional, List
 
@@ -49,13 +49,13 @@ class _ResponseHandler(ResponseHandler):
 class ProxyConnector(TCPConnector):
     def __init__(
         self,
+        host: str,
+        port: str,
         proxy_type: ProxyType = ProxyType.SOCKS5,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
         rdns: Optional[bool] = None,
-        proxy_ssl: Optional[ssl.SSLContext] = None,
+        proxy_ssl: Optional[SSLContext] = None,
         **kwargs: Any,
     ) -> None:
         kwargs['resolver'] = NoResolver()
