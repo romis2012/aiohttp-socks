@@ -14,7 +14,7 @@ It uses [python-socks](https://github.com/romis2012/python-socks) for core proxy
 ## Requirements
 - Python >= 3.8
 - aiohttp >= 3.10.0
-- python-socks[asyncio] >= 1.0.1
+- python-socks[asyncio] >= 2.4.3
 
 ## Installation
 ```
@@ -39,7 +39,7 @@ async def fetch(url):
     #     port=1080,
     #     username='user',
     #     password='password',
-    #     rdns=True
+    #     rdns=True # default is True for socks5
     # )
     
     ### proxy chaining (since ver 0.3.3)
@@ -51,25 +51,6 @@ async def fetch(url):
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as response:
             return await response.text()
-```
-
-#### aiohttp-socks also provides `open_connection` and `create_connection` functions:
-
-```python
-from aiohttp_socks import open_connection
-
-async def fetch():
-    reader, writer = await open_connection(
-        proxy_url='socks5://user:password@127.0.0.1:1080',
-        host='check-host.net',
-        port=80
-    )
-    request = (b"GET /ip HTTP/1.1\r\n"
-               b"Host: check-host.net\r\n"
-               b"Connection: close\r\n\r\n")
-
-    writer.write(request)
-    return await reader.read(-1)
 ```
 
 ## Why yet another SOCKS connector for aiohttp
