@@ -84,7 +84,7 @@ class ProxyConnector(_BaseProxyConnector):
     def __init__(
         self,
         host: str,
-        port: str,
+        port: int,
         proxy_type: ProxyType = ProxyType.SOCKS5,
         username: Optional[str] = None,
         password: Optional[str] = None,
