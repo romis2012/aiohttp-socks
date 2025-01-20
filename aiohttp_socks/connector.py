@@ -80,6 +80,8 @@ class _BaseProxyConnector(TCPConnector):
     async def _old_wrap_create_connection(
         self, protocol_factory, host, port, *, ssl, **kwargs
     ):
+        connect_timeout = None
+
         timeout = kwargs.get("timeout")
         if timeout is not None:
             connect_timeout = getattr(timeout, "sock_connect", None)
