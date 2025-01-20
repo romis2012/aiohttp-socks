@@ -26,12 +26,12 @@ class NoResolver(AbstractResolver):
     ) -> List["ResolveResult"]:
         return [
             {
-                "hostname": host,
-                "host": host,
-                "port": port,
-                "family": family,
-                "proto": 0,
-                "flags": 0,
+                'hostname': host,
+                'host': host,
+                'port': port,
+                'family': family,
+                'proto': 0,
+                'flags': 0,
             }
         ]
 
@@ -47,9 +47,7 @@ class _ResponseHandler(ResponseHandler):
     See StreamWriter.__del__ method (was added in Python 3.11.5)
     """
 
-    def __init__(
-        self, loop: asyncio.AbstractEventLoop, writer: asyncio.StreamWriter
-    ) -> None:
+    def __init__(self, loop: asyncio.AbstractEventLoop, writer: asyncio.StreamWriter) -> None:
         super().__init__(loop)
         self._writer = writer
 
@@ -68,9 +66,9 @@ class _BaseProxyConnector(TCPConnector):
             host: str = addr_infos[0][4][0]
             port: int = addr_infos[0][4][1]
         except IndexError as e:  # pragma: no cover
-            raise ValueError("Invalid arg: `addr_infos`") from e
+            raise ValueError('Invalid arg: `addr_infos`') from e
 
-        ssl: Optional[SSLContext] = kwargs.get("ssl")  # type: ignore
+        ssl: Optional[SSLContext] = kwargs.get('ssl')  # type: ignore
 
         return await self._connect_via_proxy(
             host=host,
@@ -115,7 +113,7 @@ class ProxyConnector(_BaseProxyConnector):
         proxy_ssl: Optional[SSLContext] = None,
         **kwargs: Any,
     ) -> None:
-        kwargs["resolver"] = NoResolver()
+        kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
         self._proxy_type = proxy_type
@@ -185,7 +183,7 @@ class ProxyInfo(NamedTuple):
 
 class ChainProxyConnector(_BaseProxyConnector):
     def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs):
-        kwargs["resolver"] = NoResolver()
+        kwargs['resolver'] = NoResolver()
         super().__init__(**kwargs)
 
         self._proxy_infos = proxy_infos
@@ -232,7 +230,7 @@ class ChainProxyConnector(_BaseProxyConnector):
         return transport, protocol
 
     @classmethod
-    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> "ChainProxyConnector":
+    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> 'ChainProxyConnector':
         infos = []
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)
