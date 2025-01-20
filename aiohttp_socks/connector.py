@@ -2,6 +2,7 @@ import asyncio
 import socket
 from ssl import SSLContext
 from typing import Any, Iterable, NamedTuple, Optional, List, Tuple
+from inspect import signature
 
 from aiohttp import ClientConnectorError, TCPConnector
 from aiohttp.abc import AbstractResolver
@@ -25,12 +26,12 @@ class NoResolver(AbstractResolver):
     ) -> List["ResolveResult"]:
         return [
             {
-                'hostname': host,
-                'host': host,
-                'port': port,
-                'family': family,
-                'proto': 0,
-                'flags': 0,
+                "hostname": host,
+                "host": host,
+                "port": port,
+                "family": family,
+                "proto": 0,
+                "flags": 0,
             }
         ]
 
@@ -46,7 +47,9 @@ class _ResponseHandler(ResponseHandler):
     See StreamWriter.__del__ method (was added in Python 3.11.5)
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, writer: asyncio.StreamWriter) -> None:
+    def __init__(
+        self, loop: asyncio.AbstractEventLoop, writer: asyncio.StreamWriter
+    ) -> None:
         super().__init__(loop)
         self._writer = writer
 
@@ -65,15 +68,29 @@ class _BaseProxyConnector(TCPConnector):
             host: str = addr_infos[0][4][0]
             port: int = addr_infos[0][4][1]
         except IndexError as e:  # pragma: no cover
-            raise ValueError('Invalid arg: `addr_infos`') from e
+            raise ValueError("Invalid arg: `addr_infos`") from e
 
-        ssl: Optional[SSLContext] = kwargs.get('ssl')  # type: ignore
+        ssl: Optional[SSLContext] = kwargs.get("ssl")  # type: ignore
 
         return await self._connect_via_proxy(
             host=host,
             port=port,
             ssl=ssl,
             timeout=timeout.sock_connect,
+        )
+
+    async def _old_wrap_create_connection(
+        self, protocol_factory, host, port, *, ssl, **kwargs
+    ):
+        timeout = kwargs.get("timeout")
+        if timeout is not None:
+            connect_timeout = getattr(timeout, "sock_connect", None)
+
+        return await self._connect_via_proxy(
+            host=host,
+            port=port,
+            ssl=ssl,
+            timeout=connect_timeout,
         )
 
     async def _connect_via_proxy(
@@ -98,7 +115,7 @@ class ProxyConnector(_BaseProxyConnector):
         proxy_ssl: Optional[SSLContext] = None,
         **kwargs: Any,
     ) -> None:
-        kwargs['resolver'] = NoResolver()
+        kwargs["resolver"] = NoResolver()
         super().__init__(**kwargs)
 
         self._proxy_type = proxy_type
@@ -145,7 +162,7 @@ class ProxyConnector(_BaseProxyConnector):
         return transport, protocol
 
     @classmethod
-    def from_url(cls, url: str, **kwargs: Any) -> 'ProxyConnector':
+    def from_url(cls, url: str, **kwargs: Any) -> "ProxyConnector":
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls(
             proxy_type=proxy_type,
@@ -168,7 +185,7 @@ class ProxyInfo(NamedTuple):
 
 class ChainProxyConnector(_BaseProxyConnector):
     def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs):
-        kwargs['resolver'] = NoResolver()
+        kwargs["resolver"] = NoResolver()
         super().__init__(**kwargs)
 
         self._proxy_infos = proxy_infos
@@ -215,7 +232,7 @@ class ChainProxyConnector(_BaseProxyConnector):
         return transport, protocol
 
     @classmethod
-    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> 'ChainProxyConnector':
+    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> "ChainProxyConnector":
         infos = []
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)
@@ -229,3 +246,10 @@ class ChainProxyConnector(_BaseProxyConnector):
             infos.append(proxy_info)
 
         return cls(infos, **kwargs)
+
+
+# check if backward compatibility patch is needed
+if "addr_infos" not in list(signature(TCPConnector._wrap_create_connection).parameters):
+    _BaseProxyConnector._wrap_create_connection = (
+        _BaseProxyConnector._old_wrap_create_connection
+    )
