@@ -4,10 +4,16 @@ from ssl import SSLContext
 from typing import Any, Iterable, NamedTuple, Optional, List, Tuple
 
 from aiohttp import ClientConnectorError, TCPConnector
-from aiohttp.abc import AbstractResolver, ResolveResult
+from aiohttp.abc import AbstractResolver
 from aiohttp.client_proto import ResponseHandler
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
+
+try:
+    from aiohttp.abc import ResolveResult
+except:
+    # not available in old packages
+    pass
 
 
 class NoResolver(AbstractResolver):
@@ -16,7 +22,7 @@ class NoResolver(AbstractResolver):
         host: str,
         port: int = 0,
         family: socket.AddressFamily = socket.AF_INET,  # pylint: disable=no-member
-    ) -> List[ResolveResult]:
+    ) -> List["ResolveResult"]:
         return [
             {
                 'hostname': host,
