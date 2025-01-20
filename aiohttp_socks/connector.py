@@ -160,7 +160,7 @@ class ProxyConnector(_BaseProxyConnector):
         return transport, protocol
 
     @classmethod
-    def from_url(cls, url: str, **kwargs: Any) -> "ProxyConnector":
+    def from_url(cls, url: str, **kwargs: Any) -> 'ProxyConnector':
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls(
             proxy_type=proxy_type,
