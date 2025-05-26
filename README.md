@@ -7,7 +7,7 @@
 [![Downloads](https://pepy.tech/badge/aiohttp-socks/month)](https://pepy.tech/project/aiohttp-socks)
 -->
 The `aiohttp-socks` package provides a proxy connector for [aiohttp](https://github.com/aio-libs/aiohttp). 
-Supports SOCKS4(a), SOCKS5(h), HTTP (tunneling) as well as Proxy chains.
+Supports SOCKS4(a), SOCKS5(h), HTTP (CONNECT) as well as Proxy chains.
 It uses [python-socks](https://github.com/romis2012/python-socks) for core proxy functionality.
 
 
@@ -23,7 +23,7 @@ pip install aiohttp_socks
 
 ## Usage
 
-#### aiohttp usage:
+#### Simple usage
 ```python
 import aiohttp
 from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
@@ -51,6 +51,35 @@ async def fetch(url):
     async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(url) as response:
             return await response.text()
+```
+#### Exception handling recommendations
+
+Since the latest versions of aiohttp do not respect exceptions raised in the custom `TCPConnector`, the following pattern can be used to handle `ProxyConnectionError` and `ProxyTimeoutError` exceptions
+
+```python
+from aiohttp_socks import (
+    ProxyConnectionError,
+    ProxyTimeoutError,
+)
+
+def is_proxy_connection_error(e: Exception):
+    return isinstance(e, ProxyConnectionError) or isinstance(
+        e.__cause__, ProxyConnectionError
+    )
+
+
+def is_proxy_timeout_error(e: Exception):
+    return isinstance(e, ProxyTimeoutError) or isinstance(
+        e.__cause__, ProxyTimeoutError
+    )
+
+
+try:
+    await fetch(...)
+except Exception as e:
+    if is_proxy_connection_error(e):
+        ...do something  useful...
+
 ```
 
 ## Why yet another SOCKS connector for aiohttp

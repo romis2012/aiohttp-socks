@@ -35,6 +35,16 @@ from tests.config import (
 )
 
 
+def is_proxy_connection_error(e: Exception):
+    return isinstance(e, ProxyConnectionError) or isinstance(
+        e.__cause__, ProxyConnectionError
+    )
+
+
+def is_proxy_timeout_error(e: Exception):
+    return isinstance(e, ProxyTimeoutError) or isinstance(e.__cause__, ProxyTimeoutError)
+
+
 async def fetch(
     connector: TCPConnector,
     url: str,
@@ -105,13 +115,15 @@ async def test_socks5_proxy_with_timeout(target_ssl_context):
 async def test_socks5_proxy_with_proxy_connect_timeout(target_ssl_context):
     connector = ProxyConnector.from_url(SOCKS5_IPV4_URL)
     timeout = aiohttp.ClientTimeout(total=32, sock_connect=0.001)
-    with pytest.raises(ProxyTimeoutError):
+    # with pytest.raises(ProxyTimeoutError):
+    with pytest.raises(Exception) as exc_info:
         await fetch(
             connector=connector,
             url=TEST_URL_IPV4,
             timeout=timeout,
             ssl_context=target_ssl_context,
         )
+    assert is_proxy_timeout_error(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -123,12 +135,14 @@ async def test_socks5_proxy_with_invalid_proxy_port(unused_tcp_port, target_ssl_
         username=LOGIN,
         password=PASSWORD,
     )
-    with pytest.raises(ProxyConnectionError):
+    # with pytest.raises(ProxyConnectionError):
+    with pytest.raises(Exception) as exc_info:
         await fetch(
             connector=connector,
             url=TEST_URL_IPV4,
             ssl_context=target_ssl_context,
         )
+    assert is_proxy_connection_error(exc_info.value)
 
 
 @pytest.mark.parametrize('url', (TEST_URL_IPV4, TEST_URL_IPV4_HTTPS))
@@ -175,7 +189,9 @@ async def test_http_proxy(url, target_ssl_context):
 @pytest.mark.parametrize('url', (TEST_URL_IPV4, TEST_URL_IPV4_HTTPS))
 @pytest.mark.asyncio
 async def test_chain_proxy_from_url(url, target_ssl_context):
-    connector = ChainProxyConnector.from_urls([SOCKS5_IPV4_URL, SOCKS4_URL, HTTP_PROXY_URL])
+    connector = ChainProxyConnector.from_urls(
+        [SOCKS5_IPV4_URL, SOCKS4_URL, HTTP_PROXY_URL]
+    )
     res = await fetch(
         connector=connector,
         url=url,
@@ -240,7 +256,10 @@ async def test_socks5_open_connection(url, rdns, target_ssl_context):
         server_hostname=url.host if ssl_context else None,
         rdns=rdns,
     )
-    request = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (url.path_qs, url.host)
+    request = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (
+        url.path_qs,
+        url.host,
+    )
 
     writer.write(request.encode())
     response = await reader.read(-1)
@@ -277,7 +296,10 @@ async def test_socks5_http_create_connection(
 
     writer = asyncio.StreamWriter(transport, protocol, reader, event_loop)
 
-    request = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (url.path_qs, url.host)
+    request = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (
+        url.path_qs,
+        url.host,
+    )
 
     writer.write(request.encode())
     response = await reader.read(-1)
