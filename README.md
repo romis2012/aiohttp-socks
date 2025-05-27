@@ -54,7 +54,7 @@ async def fetch(url):
 ```
 #### Exception handling recommendations
 
-Since the latest versions of aiohttp do not respect exceptions raised in the custom `TCPConnector`, the following pattern can be used to handle `ProxyConnectionError` and `ProxyTimeoutError` exceptions
+Since the latest versions of aiohttp do not respect exceptions raised in the custom `TCPConnector` (see issue #52), the following pattern can be used to handle `ProxyConnectionError` and `ProxyTimeoutError` exceptions
 
 ```python
 from aiohttp_socks import (
