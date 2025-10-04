@@ -272,7 +272,6 @@ async def test_socks5_open_connection(url, rdns, target_ssl_context):
 async def test_socks5_http_create_connection(
     url: str,
     rdns: bool,
-    event_loop: asyncio.AbstractEventLoop,
     target_ssl_context: ssl.SSLContext,
 ):
     url = URL(url)
@@ -281,6 +280,7 @@ async def test_socks5_http_create_connection(
     if url.scheme == 'https':
         ssl_context = target_ssl_context
 
+    event_loop = asyncio.get_running_loop()
     reader = asyncio.StreamReader(loop=event_loop)
     protocol = asyncio.StreamReaderProtocol(reader, loop=event_loop)
 
