@@ -3,6 +3,7 @@
 [![CI](https://github.com/romis2012/aiohttp-socks/actions/workflows/ci.yml/badge.svg)](https://github.com/romis2012/aiohttp-socks/actions/workflows/ci.yml)
 [![Coverage Status](https://codecov.io/gh/romis2012/aiohttp-socks/branch/master/graph/badge.svg)](https://codecov.io/gh/romis2012/aiohttp-socks)
 [![PyPI version](https://badge.fury.io/py/aiohttp-socks.svg)](https://pypi.python.org/pypi/aiohttp-socks)
+[![versions](https://img.shields.io/pypi/pyversions/aiohttp-socks.svg)](https://github.com/romis2012/aiohttp-socks)
 <!--
 [![Downloads](https://pepy.tech/badge/aiohttp-socks/month)](https://pepy.tech/project/aiohttp-socks)
 -->
