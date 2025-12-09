@@ -53,35 +53,6 @@ async def fetch(url):
         async with session.get(url) as response:
             return await response.text()
 ```
-#### Exception handling recommendations
-
-Since the latest versions of aiohttp do not respect exceptions raised in the custom `TCPConnector` (see issue [#52](https://github.com/romis2012/aiohttp-socks/issues/52)), the following pattern can be used to handle `ProxyConnectionError` and `ProxyTimeoutError` exceptions
-
-```python
-from aiohttp_socks import (
-    ProxyConnectionError,
-    ProxyTimeoutError,
-)
-
-def is_proxy_connection_error(e: Exception):
-    return isinstance(e, ProxyConnectionError) or isinstance(
-        e.__cause__, ProxyConnectionError
-    )
-
-
-def is_proxy_timeout_error(e: Exception):
-    return isinstance(e, ProxyTimeoutError) or isinstance(
-        e.__cause__, ProxyTimeoutError
-    )
-
-
-try:
-    await fetch(...)
-except Exception as e:
-    if is_proxy_connection_error(e):
-        ...do something  useful...
-
-```
 
 ## Why yet another SOCKS connector for aiohttp
 

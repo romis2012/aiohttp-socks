@@ -6,8 +6,12 @@ from typing import Any, Iterable, NamedTuple, Optional, List, Tuple
 from aiohttp import ClientConnectorError, TCPConnector
 from aiohttp.abc import AbstractResolver, ResolveResult
 from aiohttp.client_proto import ResponseHandler
+
+import python_socks
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
+
+from ._errors import ProxyConnectionError, ProxyTimeoutError, ProxyError
 
 
 class NoResolver(AbstractResolver):
@@ -40,7 +44,9 @@ class _ResponseHandler(ResponseHandler):
     See StreamWriter.__del__ method (was added in Python 3.11.5)
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, writer: asyncio.StreamWriter) -> None:
+    def __init__(
+        self, loop: asyncio.AbstractEventLoop, writer: asyncio.StreamWriter
+    ) -> None:
         super().__init__(loop)
         self._writer = writer
 
@@ -62,13 +68,19 @@ class _BaseProxyConnector(TCPConnector):
             raise ValueError('Invalid arg: `addr_infos`') from e
 
         ssl: Optional[SSLContext] = kwargs.get('ssl')  # type: ignore
-
-        return await self._connect_via_proxy(
-            host=host,
-            port=port,
-            ssl=ssl,
-            timeout=timeout.sock_connect,
-        )
+        try:
+            return await self._connect_via_proxy(
+                host=host,
+                port=port,
+                ssl=ssl,
+                timeout=timeout.sock_connect,
+            )
+        except python_socks.ProxyConnectionError as e:
+            raise ProxyConnectionError(str(e)) from e
+        except python_socks.ProxyTimeoutError as e:
+            raise ProxyTimeoutError(str(e)) from e
+        except python_socks.ProxyError as e:
+            raise ProxyError(str(e), error_code=e.error_code) from e
 
     async def _connect_via_proxy(
         self,
