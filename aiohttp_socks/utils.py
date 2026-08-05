@@ -1,3 +1,4 @@
+# ruff: noqa: ANN001,ANN201,ANN003,PLR0913
 import asyncio
 import warnings
 
@@ -11,7 +12,7 @@ async def open_connection(
     port=None,
     *,
     proxy_type=ProxyType.SOCKS5,
-    proxy_host='127.0.0.1',
+    proxy_host="127.0.0.1",
     proxy_port=1080,
     username=None,
     password=None,
@@ -20,20 +21,22 @@ async def open_connection(
     **kwargs,
 ):
     warnings.warn(
-        'open_connection is deprecated. '
-        'Use https://github.com/romis2012/python-socks directly instead.',
+        "open_connection is deprecated. "
+        "Use https://github.com/romis2012/python-socks directly instead.",
         DeprecationWarning,
         stacklevel=2,
     )
 
     if host is None or port is None:
-        raise ValueError('host and port must be specified')  # pragma: no cover
+        raise ValueError("host and port must be specified")  # pragma: no cover
 
     if loop is None:
         loop = asyncio.get_event_loop()
 
     if proxy_url is not None:
-        proxy_type, proxy_host, proxy_port, username, password = parse_proxy_url(proxy_url)
+        proxy_type, proxy_host, proxy_port, username, password = parse_proxy_url(
+            proxy_url
+        )
 
     proxy = Proxy.create(
         proxy_type=proxy_type,
@@ -58,7 +61,7 @@ async def create_connection(
     port=None,
     *,
     proxy_type=ProxyType.SOCKS5,
-    proxy_host='127.0.0.1',
+    proxy_host="127.0.0.1",
     proxy_port=1080,
     username=None,
     password=None,
@@ -67,23 +70,25 @@ async def create_connection(
     **kwargs,
 ):
     warnings.warn(
-        'create_connection is deprecated. '
-        'Use https://github.com/romis2012/python-socks directly instead.',
+        "create_connection is deprecated. "
+        "Use https://github.com/romis2012/python-socks directly instead.",
         DeprecationWarning,
         stacklevel=2,
     )
 
     if protocol_factory is None:
-        raise ValueError('protocol_factory must be specified')  # pragma: no cover
+        raise ValueError("protocol_factory must be specified")  # pragma: no cover
 
     if host is None or port is None:
-        raise ValueError('host and port must be specified')  # pragma: no cover
+        raise ValueError("host and port must be specified")  # pragma: no cover
 
     if loop is None:
         loop = asyncio.get_event_loop()
 
     if proxy_url is not None:
-        proxy_type, proxy_host, proxy_port, username, password = parse_proxy_url(proxy_url)
+        proxy_type, proxy_host, proxy_port, username, password = parse_proxy_url(
+            proxy_url
+        )
 
     proxy = Proxy.create(
         proxy_type=proxy_type,

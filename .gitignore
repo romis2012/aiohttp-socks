@@ -41,3 +41,4 @@ virtualenv.py
 .idea/
 .vscode/
 usage*.py
+ci.md

@@ -1,35 +1,55 @@
+from __future__ import annotations
+
 import socket
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from tests.config import (
-    TEST_HOST_NAME_IPV4,
     PROXY_HOST_NAME_IPV4,
-    TEST_HOST_NAME_IPV6,
     PROXY_HOST_NAME_IPV6,
+    TEST_HOST_NAME_IPV4,
+    TEST_HOST_NAME_IPV6,
 )
 
 
-def getaddrinfo_sync_mock():
+def getaddrinfo_sync_mock() -> Callable[..., Any]:
     _orig_getaddrinfo = socket.getaddrinfo
 
-    def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    def getaddrinfo(
+        host: str,
+        port: int,
+        family: int = 0,
+        type: int = 0,  # noqa: A002
+        proto: int = 0,
+        flags: int = 0,
+    ) -> Any:
         if host in (TEST_HOST_NAME_IPV4, PROXY_HOST_NAME_IPV4):
-            return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('127.0.0.1', port))]
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", port))]
 
         if host in (TEST_HOST_NAME_IPV6, PROXY_HOST_NAME_IPV6):
-            return [(socket.AF_INET6, socket.SOCK_STREAM, 6, '', ('::1', port, 0, 0))]
+            return [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::1", port, 0, 0))]
 
         return _orig_getaddrinfo(host, port, family, type, proto, flags)
 
     return getaddrinfo
 
 
-def getaddrinfo_async_mock(origin_getaddrinfo):
-    async def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+def getaddrinfo_async_mock(
+    origin_getaddrinfo: Callable[..., Awaitable[Any]],
+) -> Callable[..., Awaitable[Any]]:
+    async def getaddrinfo(
+        host: str,
+        port: int,
+        family: int = 0,
+        type: int = 0,  # noqa: A002
+        proto: int = 0,
+        flags: int = 0,
+    ) -> Any:
         if host in (TEST_HOST_NAME_IPV4, PROXY_HOST_NAME_IPV4):
-            return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('127.0.0.1', port))]
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", port))]
 
         if host in (TEST_HOST_NAME_IPV6, PROXY_HOST_NAME_IPV6):
-            return [(socket.AF_INET6, socket.SOCK_STREAM, 6, '', ('::1', port, 0, 0))]
+            return [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::1", port, 0, 0))]
 
         return await origin_getaddrinfo(
             host,
@@ -43,20 +63,25 @@ def getaddrinfo_async_mock(origin_getaddrinfo):
     return getaddrinfo
 
 
-def _resolve_local(host):
+def _resolve_local(host: str) -> tuple[socket.AddressFamily, str] | None:
     if host in (TEST_HOST_NAME_IPV4, PROXY_HOST_NAME_IPV4):
-        return socket.AF_INET, '127.0.0.1'
+        return socket.AF_INET, "127.0.0.1"
 
     if host in (TEST_HOST_NAME_IPV6, PROXY_HOST_NAME_IPV6):
-        return socket.AF_INET6, '::1'
+        return socket.AF_INET6, "::1"
 
     return None
 
 
-def sync_resolve_factory(cls):
+def sync_resolve_factory(cls: Any) -> Callable[..., tuple[socket.AddressFamily, str]]:
     original_resolver = cls.resolve
 
-    def new_resolver(self, host, port=0, family=socket.AF_UNSPEC):
+    def new_resolver(
+        self: Any,
+        host: str,
+        port: int = 0,
+        family: socket.AddressFamily = socket.AF_UNSPEC,
+    ) -> tuple[socket.AddressFamily, str]:
         res = _resolve_local(host)
 
         if res is not None:
@@ -67,10 +92,17 @@ def sync_resolve_factory(cls):
     return new_resolver
 
 
-def async_resolve_factory(cls):
+def async_resolve_factory(
+    cls: Any,
+) -> Callable[..., Awaitable[tuple[socket.AddressFamily, str]]]:
     original_resolver = cls.resolve
 
-    async def new_resolver(self, host, port=0, family=socket.AF_UNSPEC):
+    async def new_resolver(
+        self: Any,
+        host: str,
+        port: int = 0,
+        family: socket.AddressFamily = socket.AF_UNSPEC,
+    ) -> tuple[socket.AddressFamily, str]:
         res = _resolve_local(host)
 
         if res is not None:

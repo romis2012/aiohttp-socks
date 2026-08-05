@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 import asyncio
 import socket
+from collections.abc import Iterable
 from ssl import SSLContext
-from typing import Any, Iterable, NamedTuple, Optional, List, Tuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from aiohttp import ClientConnectorError, TCPConnector
 from aiohttp.abc import AbstractResolver, ResolveResult
 from aiohttp.client_proto import ResponseHandler
 
+if TYPE_CHECKING:  # pragma: no cover
+    from aiohttp import AddrInfoType, ClientRequest, ClientTimeout
+
 import python_socks
 from python_socks import ProxyType, parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
 
-from ._errors import ProxyConnectionError, ProxyTimeoutError, ProxyError
+from ._errors import ProxyConnectionError, ProxyError, ProxyTimeoutError
 
 
 class NoResolver(AbstractResolver):
@@ -19,20 +25,20 @@ class NoResolver(AbstractResolver):
         self,
         host: str,
         port: int = 0,
-        family: socket.AddressFamily = socket.AF_INET,  # pylint: disable=no-member
-    ) -> List[ResolveResult]:
+        family: socket.AddressFamily = socket.AF_INET,
+    ) -> list[ResolveResult]:
         return [
             {
-                'hostname': host,
-                'host': host,
-                'port': port,
-                'family': family,
-                'proto': 0,
-                'flags': 0,
+                "hostname": host,
+                "host": host,
+                "port": port,
+                "family": family,
+                "proto": 0,
+                "flags": 0,
             }
         ]
 
-    async def close(self):
+    async def close(self) -> None:
         pass  # pragma: no cover
 
 
@@ -54,20 +60,20 @@ class _ResponseHandler(ResponseHandler):
 class _BaseProxyConnector(TCPConnector):
     async def _wrap_create_connection(
         self,
-        *args,
-        addr_infos,
-        req,
-        timeout,
-        client_error=ClientConnectorError,
-        **kwargs,
-    ) -> Tuple[asyncio.Transport, ResponseHandler]:
+        *args: Any,  # noqa: ARG002
+        addr_infos: list[AddrInfoType],
+        req: ClientRequest,  # noqa: ARG002
+        timeout: ClientTimeout,
+        client_error: type[Exception] = ClientConnectorError,  # noqa: ARG002
+        **kwargs: Any,
+    ) -> tuple[asyncio.Transport, ResponseHandler]:
         try:
             host: str = addr_infos[0][4][0]
             port: int = addr_infos[0][4][1]
         except IndexError as e:  # pragma: no cover
-            raise ValueError('Invalid arg: `addr_infos`') from e
+            raise ValueError("Invalid arg: `addr_infos`") from e
 
-        ssl: Optional[SSLContext] = kwargs.get('ssl')  # type: ignore
+        ssl: SSLContext | None = kwargs.get("ssl")
         try:
             return await self._connect_via_proxy(
                 host=host,
@@ -86,9 +92,9 @@ class _BaseProxyConnector(TCPConnector):
         self,
         host: str,
         port: int,
-        ssl: Optional[SSLContext] = None,
-        timeout: Optional[float] = None,
-    ) -> Tuple[asyncio.Transport, ResponseHandler]:
+        ssl: SSLContext | None = None,
+        timeout: float | None = None,
+    ) -> tuple[asyncio.Transport, ResponseHandler]:
         raise NotImplementedError
 
 
@@ -98,13 +104,13 @@ class ProxyConnector(_BaseProxyConnector):
         host: str,
         port: int,
         proxy_type: ProxyType = ProxyType.SOCKS5,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        rdns: Optional[bool] = None,
-        proxy_ssl: Optional[SSLContext] = None,
+        username: str | None = None,
+        password: str | None = None,
+        rdns: bool | None = None,  # noqa: FBT001
+        proxy_ssl: SSLContext | None = None,
         **kwargs: Any,
     ) -> None:
-        kwargs['resolver'] = NoResolver()
+        kwargs["resolver"] = NoResolver()
         super().__init__(**kwargs)
 
         self._proxy_type = proxy_type
@@ -119,9 +125,9 @@ class ProxyConnector(_BaseProxyConnector):
         self,
         host: str,
         port: int,
-        ssl: Optional[SSLContext] = None,
-        timeout: Optional[float] = None,
-    ) -> Tuple[asyncio.Transport, ResponseHandler]:
+        ssl: SSLContext | None = None,
+        timeout: float | None = None,
+    ) -> tuple[asyncio.Transport, ResponseHandler]:
         proxy = Proxy(
             proxy_type=self._proxy_type,
             host=self._proxy_host,
@@ -151,7 +157,7 @@ class ProxyConnector(_BaseProxyConnector):
         return transport, protocol
 
     @classmethod
-    def from_url(cls, url: str, **kwargs: Any) -> 'ProxyConnector':
+    def from_url(cls, url: str, **kwargs: Any) -> ProxyConnector:
         proxy_type, host, port, username, password = parse_proxy_url(url)
         return cls(
             proxy_type=proxy_type,
@@ -167,14 +173,14 @@ class ProxyInfo(NamedTuple):
     proxy_type: ProxyType
     host: str
     port: int
-    username: Optional[str] = None
-    password: Optional[str] = None
-    rdns: Optional[bool] = None
+    username: str | None = None
+    password: str | None = None
+    rdns: bool | None = None
 
 
 class ChainProxyConnector(_BaseProxyConnector):
-    def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs):
-        kwargs['resolver'] = NoResolver()
+    def __init__(self, proxy_infos: Iterable[ProxyInfo], **kwargs: Any) -> None:
+        kwargs["resolver"] = NoResolver()
         super().__init__(**kwargs)
 
         self._proxy_infos = proxy_infos
@@ -183,9 +189,9 @@ class ChainProxyConnector(_BaseProxyConnector):
         self,
         host: str,
         port: int,
-        ssl: Optional[SSLContext] = None,
-        timeout: Optional[float] = None,
-    ) -> Tuple[asyncio.Transport, ResponseHandler]:
+        ssl: SSLContext | None = None,
+        timeout: float | None = None,
+    ) -> tuple[asyncio.Transport, ResponseHandler]:
         forward = None
         proxy = None
         for info in self._proxy_infos:
@@ -221,7 +227,7 @@ class ChainProxyConnector(_BaseProxyConnector):
         return transport, protocol
 
     @classmethod
-    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> 'ChainProxyConnector':
+    def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> ChainProxyConnector:
         infos = []
         for url in urls:
             proxy_type, host, port, username, password = parse_proxy_url(url)
