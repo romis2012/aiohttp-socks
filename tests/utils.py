@@ -17,7 +17,7 @@ def wait_until_connectable(host: str, port: int, timeout: int = 10) -> bool:
     while not is_connectable(host=host, port=port):
         if count >= timeout:
             raise ConnectionError(
-                f"The proxy server has not available "
+                f"The server has not available "
                 f"by ({host}, {port}) in {timeout:d} seconds"
             )
         count += 1

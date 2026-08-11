@@ -145,7 +145,7 @@ class ProxyConnector(_BaseProxyConnector):
             timeout=timeout,
         )
 
-        transport: asyncio.Transport = stream.writer.transport
+        transport = stream.writer.transport
         protocol: ResponseHandler = _ResponseHandler(
             loop=self._loop,
             writer=stream.writer,
@@ -154,7 +154,7 @@ class ProxyConnector(_BaseProxyConnector):
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
 
-        return transport, protocol
+        return transport, protocol  # type:ignore[return-value]
 
     @classmethod
     def from_url(cls, url: str, **kwargs: Any) -> ProxyConnector:
@@ -215,7 +215,7 @@ class ChainProxyConnector(_BaseProxyConnector):
             timeout=timeout,
         )
 
-        transport: asyncio.Transport = stream.writer.transport
+        transport = stream.writer.transport
         protocol: ResponseHandler = _ResponseHandler(
             loop=self._loop,
             writer=stream.writer,
@@ -224,7 +224,7 @@ class ChainProxyConnector(_BaseProxyConnector):
         transport.set_protocol(protocol)
         protocol.connection_made(transport)
 
-        return transport, protocol
+        return transport, protocol  # type:ignore[return-value]
 
     @classmethod
     def from_urls(cls, urls: Iterable[str], **kwargs: Any) -> ChainProxyConnector:

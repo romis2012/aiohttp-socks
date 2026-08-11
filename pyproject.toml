@@ -31,7 +31,10 @@ classifiers = [
     "Framework :: AsyncIO",
 ]
 
-dependencies = ["aiohttp>=3.10.0", "python-socks[asyncio]>=2.4.3,<3.0.0"]
+dependencies = [
+    "aiohttp>=3.10.0", 
+    "python-socks[asyncio]>=2.4.3,<4.0.0",
+]
 
 [dependency-groups]
 dev = [

@@ -39,7 +39,7 @@ from tests.config import (
 
 async def fetch(
     connector: TCPConnector,
-    url: str,
+    url: str | URL,
     timeout: float | aiohttp.ClientTimeout | None = None,
     ssl_context: ssl.SSLContext | None = None,
 ) -> ClientResponse:
