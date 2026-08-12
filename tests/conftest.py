@@ -138,7 +138,7 @@ def proxy_server() -> Iterator[None]:
 
     yield None
 
-    server.terminate()
+    server.shutdown()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -148,8 +148,8 @@ def web_server(target_ssl_certfile: str, target_ssl_keyfile: str) -> Iterator[No
         HttpServerConfig(
             host=TEST_HOST_IPV4,
             port=TEST_PORT_IPV4_HTTPS,
-            certfile=target_ssl_certfile,
-            keyfile=target_ssl_keyfile,
+            ssl_certfile=target_ssl_certfile,
+            ssl_keyfile=target_ssl_keyfile,
         ),
     ]
 
@@ -159,8 +159,8 @@ def web_server(target_ssl_certfile: str, target_ssl_keyfile: str) -> Iterator[No
     server = HttpServer(config=config)
     server.start()
     for cfg in config:
-        server.wait_until_connectable(host=cfg.host, port=cfg.port)
+        wait_until_connectable(host=cfg.host, port=cfg.port)
 
     yield None
 
-    server.terminate()
+    server.shutdown()

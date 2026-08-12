@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import ssl
-from collections.abc import Awaitable, Callable, Iterable
-from multiprocessing import Process
-from typing import Any, NamedTuple
+import functools
+import threading
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from ssl import SSLContext
+from typing import Any
 from unittest import mock
 
 import anyio
@@ -22,34 +24,31 @@ from tiny_proxy import (
 
 from tests.mocks import getaddrinfo_async_mock
 
-
-class ProxyConfig(NamedTuple):
-    proxy_type: str
-    host: str
-    port: int
-    username: str | None = None
-    password: str | None = None
-    ssl_certfile: str | None = None
-    ssl_keyfile: str | None = None
-
-    def to_dict(self) -> dict[str, Any]:
-        d = {}
-        for key, val in self._asdict().items():
-            if val is not None:
-                d[key] = val  # noqa: PERF403
-        return d
-
-
-cls_map = {
+PROXY_HANDLERS = {
     "http": HttpProxyHandler,
     "socks4": Socks4ProxyHandler,
     "socks5": Socks5ProxyHandler,
 }
 
 
+@dataclass
+class ProxyConfig:
+    proxy_type: str
+    host: str
+    port: int
+    username: str | None = None
+    password: str | None = None
+    ssl_context: SSLContext | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        # TypeError: cannot pickle 'SSLContext' object
+        # return {k: v for k, v in asdict(self).items() if v is not None}
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
+
 def connect_to_remote_factory(
     cls: type[AbstractProxy],
-) -> Callable[[AbstractProxy], Awaitable[SocketStream]]:
+) -> Callable[[AbstractProxy], SocketStream]:
     """
     simulate target host connection timeout
     """
@@ -60,6 +59,29 @@ def connect_to_remote_factory(
         return await origin_connect_to_remote(self)
 
     return new_connect_to_remote
+
+
+async def serve(
+    proxy_type: str,
+    host: str,
+    port: int,
+    ssl_context: SSLContext | None = None,
+    **kwargs: Any,
+) -> None:
+    handler_cls = PROXY_HANDLERS.get(proxy_type)
+    if not handler_cls:
+        raise RuntimeError(f"Unsupported type: {proxy_type}")
+
+    print(f"Starting {proxy_type} proxy on {host}:{port}...")
+
+    handler = handler_cls(**kwargs)
+
+    listener = await create_tcp_listener(local_host=host, local_port=port)
+    if ssl_context is not None:
+        listener = TLSListener(listener=listener, ssl_context=ssl_context)  # type:ignore[assignment]
+
+    async with listener:
+        await listener.serve(handler.handle)
 
 
 @mock.patch.object(
@@ -81,62 +103,32 @@ def connect_to_remote_factory(
     "anyio._core._sockets.getaddrinfo",
     new=getaddrinfo_async_mock(anyio.getaddrinfo),
 )
-def start(
-    proxy_type: str,
-    host: str,
-    port: int,
-    ssl_certfile: str | None = None,
-    ssl_keyfile: str | None = None,
-    **kwargs: Any,
+async def serve_multiple(
+    config: Iterable[ProxyConfig],
+    stop_event: threading.Event,
 ) -> None:
-    handler_cls = cls_map.get(proxy_type)
-    if not handler_cls:
-        raise RuntimeError(f"Unsupported type: {proxy_type}")
+    async with anyio.create_task_group() as tg:
+        for cfg in config:
+            tg.start_soon(functools.partial(serve, **cfg.to_dict()))
 
-    if ssl_certfile and ssl_keyfile:
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(ssl_certfile, ssl_keyfile)
-    else:
-        ssl_context = None
+        while not stop_event.is_set():  # noqa: ASYNC110
+            await anyio.sleep(0.1)
 
-    print(f"Starting {proxy_type} proxy on {host}:{port}...")
-
-    handler = handler_cls(**kwargs)
-
-    async def serve():  # noqa: ANN202
-        listener = await create_tcp_listener(local_host=host, local_port=port)
-        if ssl_context is not None:
-            listener = TLSListener(listener=listener, ssl_context=ssl_context)
-
-        async with listener:
-            await listener.serve(handler.handle)
-
-    anyio.run(serve)
+        tg.cancel_scope.cancel()
 
 
 class ProxyServer:
     def __init__(self, config: Iterable[ProxyConfig]) -> None:
         self.config = config
-        self.workers: list[Process] = []
+        self.stop_event = threading.Event()
+        self.server_thread = threading.Thread(target=self.do_start, daemon=True)
+
+    def do_start(self) -> None:
+        anyio.run(serve_multiple, self.config, self.stop_event)
 
     def start(self) -> None:
-        for cfg in self.config:
-            print(
-                "Starting {} proxy on {}:{}; certfile={}, keyfile={}...".format(  # noqa: UP032
-                    cfg.proxy_type,
-                    cfg.host,
-                    cfg.port,
-                    cfg.ssl_certfile,
-                    cfg.ssl_keyfile,
-                )
-            )
+        self.server_thread.start()
 
-            p = Process(target=start, kwargs=cfg.to_dict(), daemon=True)
-            self.workers.append(p)
-
-        for p in self.workers:
-            p.start()
-
-    def terminate(self) -> None:
-        for p in self.workers:
-            p.terminate()
+    def shutdown(self) -> None:
+        self.stop_event.set()
+        self.server_thread.join(timeout=2)
